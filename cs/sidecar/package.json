@@ -1,0 +1,13 @@
+{
+  "name": "h2k-cs16-sidecar",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Tails h2k_events.jsonl from the AMX plugin and POSTs match results to Hard2Kill backend",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

@@ -1,0 +1,23 @@
+app = 'h2k-cs16-server'
+primary_region = 'cdg'
+
+[build]
+
+[[services]]
+  protocol = 'tcp'
+  internal_port = 27016
+
+  [[services.ports]]
+    port = 443
+    handlers = ['tls', 'http']
+
+  [[services.ports]]
+    port = 80
+    handlers = ['http']
+
+[[services]]
+  protocol = 'udp'
+  internal_port = 27018
+
+  [[services.ports]]
+    port = 27018

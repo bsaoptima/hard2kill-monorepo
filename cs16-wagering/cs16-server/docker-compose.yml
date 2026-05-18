@@ -1,0 +1,37 @@
+services:
+  cs16:
+    image: yohimik/cs-web-server-metpamx:latest
+    container_name: cs16
+    command: ["+map", "de_dust2", "+maxplayers", "4"]
+    restart: always
+    platform: linux/386
+    environment:
+      PORT: 27018
+      IP: ${DROPLET_IP:-161.35.99.157}
+    volumes:
+      # The host already has valve.zip at /root/valve.zip from previous setup.
+      # Bind-mount is read-only and avoids a 415MB copy into the container.
+      - "${VALVE_ZIP:-/root/valve.zip}:/xashds/public/valve.zip:ro"
+    ports:
+      - "27016:27016"
+      - "27018:27018"
+      - "27018:27018/udp"
+
+  sidecar:
+    build: ./sidecar
+    container_name: h2k-sidecar
+    restart: always
+    depends_on:
+      - cs16
+    environment:
+      EVENTS_URL: http://cs16:27016/h2k_events.jsonl
+      OFFSET_FILE: /state/events.offset
+      SEEN_FILE: /state/events.seen
+      H2K_WEBHOOK_URL: ${H2K_WEBHOOK_URL}
+      CS16_WEBHOOK_SECRET: ${CS16_WEBHOOK_SECRET}
+      POLL_INTERVAL_MS: "1000"
+    volumes:
+      - "h2k_sidecar_state:/state"
+
+volumes:
+  h2k_sidecar_state:

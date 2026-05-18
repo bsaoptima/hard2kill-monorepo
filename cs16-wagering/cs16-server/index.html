@@ -1,0 +1,608 @@
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link rel="icon" href="/assets/favicon-DRK6xunG.png" type="image/png">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>HARD2KILL — Counter-Strike</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            background-color: #0a0a0a;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            color: white;
+            overflow: hidden;
+        }
+
+        canvas {
+            width: 100vw;
+            height: 100vh;
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: 1;
+        }
+
+        /* ===== OVERLAY UI (on top of game) ===== */
+        #overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            z-index: 10;
+            pointer-events: none;
+        }
+
+        #overlay * {
+            pointer-events: auto;
+        }
+
+        /* Top bar - branding + score */
+        #topbar {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 12px 20px;
+            gap: 40px;
+            pointer-events: none;
+        }
+
+        .brand {
+            position: absolute;
+            left: 16px;
+            top: 12px;
+            font-size: 14px;
+            font-weight: 800;
+            letter-spacing: 2px;
+            color: #00ff66;
+            text-shadow: 0 0 20px rgba(0, 255, 102, 0.5);
+        }
+
+        #scoreboard {
+            display: none;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 10px 30px;
+            font-size: 18px;
+            font-weight: 600;
+            text-align: center;
+            min-width: 400px;
+        }
+
+        .score-row {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 24px;
+        }
+
+        .player-score {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-width: 120px;
+        }
+
+        .player-score .name {
+            font-size: 12px;
+            color: #888;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .player-score .kills {
+            font-size: 32px;
+            font-weight: 800;
+        }
+
+        .player-score .balance {
+            font-size: 16px;
+            font-weight: 700;
+        }
+
+        .player-score.winning .kills { color: #00ff66; }
+        .player-score.winning .balance { color: #00ff66; }
+        .player-score.losing .kills { color: #ff4444; }
+        .player-score.losing .balance { color: #ff4444; }
+        .player-score.tied .kills { color: #ffcc00; }
+        .player-score.tied .balance { color: #ffcc00; }
+
+        .vs {
+            font-size: 14px;
+            color: #666;
+            font-weight: 800;
+        }
+
+        .match-info {
+            font-size: 11px;
+            color: #666;
+            margin-top: 6px;
+        }
+
+        /* Timer */
+        #timer {
+            display: none;
+            position: fixed;
+            top: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 20px;
+            font-weight: 700;
+            font-variant-numeric: tabular-nums;
+            color: #ccc;
+            z-index: 10;
+            pointer-events: none;
+        }
+
+        #timer.urgent { color: #ff4444; animation: pulse 0.5s infinite alternate; }
+
+        @keyframes pulse { from { opacity: 1; } to { opacity: 0.5; } }
+
+        /* Center announcements */
+        #announcement {
+            position: fixed;
+            top: 35%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            z-index: 15;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        #announcement.show { opacity: 1; }
+
+        #announcement .big {
+            font-size: 64px;
+            font-weight: 900;
+            text-transform: uppercase;
+            text-shadow: 0 0 40px rgba(0, 255, 102, 0.5);
+        }
+
+        #announcement .sub {
+            font-size: 24px;
+            font-weight: 600;
+            margin-top: 8px;
+            color: #ccc;
+        }
+
+        /* Kill notification */
+        #killfeed {
+            position: fixed;
+            right: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            z-index: 10;
+            pointer-events: none;
+            font-size: 28px;
+            font-weight: 800;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+
+        #killfeed.show { opacity: 1; }
+        #killfeed.positive { color: #00ff66; }
+        #killfeed.negative { color: #ff4444; }
+
+        /* Crosshair */
+        #crosshair {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 5;
+            pointer-events: none;
+            display: none;
+        }
+
+        /* ===== START SCREEN ===== */
+        #startscreen {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            z-index: 100;
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 50%, #0a0a0a 100%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 30px;
+        }
+
+        #startscreen h1 {
+            font-size: 48px;
+            font-weight: 900;
+            letter-spacing: 4px;
+            color: #00ff66;
+            text-shadow: 0 0 40px rgba(0, 255, 102, 0.3);
+        }
+
+        #startscreen h2 {
+            font-size: 18px;
+            font-weight: 400;
+            color: #666;
+            margin-top: -20px;
+        }
+
+        #startscreen form {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 16px;
+        }
+
+        #startscreen input[type="text"] {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 8px;
+            padding: 12px 20px;
+            color: white;
+            font-size: 16px;
+            text-align: center;
+            width: 250px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        #startscreen input[type="text"]:focus {
+            border-color: #00ff66;
+        }
+
+        #startscreen button {
+            background: #00ff66;
+            color: #0a0a0a;
+            border: none;
+            border-radius: 8px;
+            padding: 14px 48px;
+            font-size: 18px;
+            font-weight: 800;
+            letter-spacing: 2px;
+            cursor: pointer;
+            transition: transform 0.1s, box-shadow 0.2s;
+        }
+
+        #startscreen button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 30px rgba(0, 255, 102, 0.4);
+        }
+
+        #startscreen .tagline {
+            font-size: 13px;
+            color: #444;
+            margin-top: 10px;
+        }
+
+        /* Progress bar */
+        #loadbar {
+            display: none;
+            width: 300px;
+        }
+
+        #loadbar progress {
+            width: 100%;
+            height: 6px;
+            border-radius: 3px;
+            overflow: hidden;
+            appearance: none;
+        }
+
+        #loadbar progress::-webkit-progress-bar { background: #1a1a1a; }
+        #loadbar progress::-webkit-progress-value { background: #00ff66; }
+        #loadbar .status {
+            font-size: 12px;
+            color: #666;
+            text-align: center;
+            margin-top: 8px;
+        }
+
+        /* Hide original progress bar */
+        progress#progress { opacity: 0 !important; height: 0 !important; }
+    </style>
+    <script type="module" crossorigin src="/assets/main-Sj92UznW.js"></script>
+</head>
+<body>
+
+<!-- Custom start screen -->
+<div id="startscreen">
+    <h1>HARD2KILL</h1>
+    <h2>Counter-Strike — Deathmatch</h2>
+    <form id="h2k-form">
+        <input type="text" id="h2k-username" placeholder="Enter your name" required autocomplete="off" />
+        <button type="submit">PLAY</button>
+    </form>
+    <div id="loadbar">
+        <progress id="h2k-progress" value="0" max="1"></progress>
+        <div class="status" id="h2k-status">Loading...</div>
+    </div>
+    <div class="tagline">Bet on yourself. Win on skill.</div>
+</div>
+
+<!-- Game overlay (shown during gameplay) -->
+<div id="overlay">
+    <div id="topbar">
+        <a href="https://h2k.app" class="brand" style="text-decoration:none; cursor:pointer;" title="Back to Hard2Kill">← HARD2KILL</a>
+        <div id="scoreboard">
+            <div class="score-row">
+                <div class="player-score tied" id="p1-score">
+                    <span class="name" id="p1-name">YOU</span>
+                    <span class="kills" id="p1-kills">0</span>
+                    <span class="balance" id="p1-balance">$0</span>
+                </div>
+                <span class="vs">VS</span>
+                <div class="player-score tied" id="p2-score">
+                    <span class="name" id="p2-name">OPPONENT</span>
+                    <span class="kills" id="p2-kills">0</span>
+                    <span class="balance" id="p2-balance">$0</span>
+                </div>
+            </div>
+            <div class="match-info">FIRST TO <span id="kill-target">10</span> KILLS</div>
+        </div>
+    </div>
+    <div id="timer"></div>
+    <div id="announcement"><div class="big"></div><div class="sub"></div></div>
+    <div id="killfeed"></div>
+    <div id="crosshair">
+        <svg width="24" height="24" viewBox="0 0 24 24">
+            <line x1="12" y1="4" x2="12" y2="10" stroke="#00ff66" stroke-width="2"/>
+            <line x1="12" y1="14" x2="12" y2="20" stroke="#00ff66" stroke-width="2"/>
+            <line x1="4" y1="12" x2="10" y2="12" stroke="#00ff66" stroke-width="2"/>
+            <line x1="14" y1="12" x2="20" y2="12" stroke="#00ff66" stroke-width="2"/>
+        </svg>
+    </div>
+</div>
+
+<!-- Original elements (hidden but needed by main JS) -->
+<div style="display:none !important">
+    <div id="social"></div>
+    <img id="logo" alt="" src="/assets/logo-DTTQpMBv.png"/>
+    <p id="warning"></p>
+</div>
+<progress id="progress" value="0" max="1" style="display:none !important"></progress>
+<canvas id="canvas"></canvas>
+<form id="form" style="display:none !important">
+    <div>
+        <label>Touch controls <input type="checkbox" id="touchControls"></label>
+    </div>
+    <div>
+        <label>Player name <input id="username" type="text" required/></label>
+        <button type="submit">Start</button>
+    </div>
+</form>
+
+<script>
+    // ===== H2K OVERLAY ENGINE v3 — POLLS SERVER STATE =====
+    const $ = id => document.getElementById(id);
+    const h2kForm = $('h2k-form');
+    const h2kUsername = $('h2k-username');
+    const startscreen = $('startscreen');
+    const loadbar = $('loadbar');
+    const h2kStatus = $('h2k-status');
+    const crosshair = $('crosshair');
+    const scoreboard = $('scoreboard');
+    const announcement = $('announcement');
+    const killfeed = $('killfeed');
+    const timerEl = $('timer');
+
+    let myName = '';
+    let prevState = null;
+    let prevKills = {};
+    let gameStarted = false;
+
+    // ===== H2K PAID-MATCH MODE =====
+    // When H2K matchmaking redirects here, the URL carries ?token=&matchId=&name=&connect=.
+    // We auto-boot with the name, then poll for the engine to push setinfo + connect.
+    const urlParams = new URLSearchParams(window.location.search);
+    const h2kMatchCtx = urlParams.get('token') ? {
+        token:   urlParams.get('token'),
+        matchId: urlParams.get('matchId') || '',
+        name:    urlParams.get('name') || 'Player',
+        connect: urlParams.get('connect') || '',
+    } : null;
+
+    if (h2kMatchCtx) {
+        // Paid match — skip the start screen entirely, auto-boot.
+        h2kUsername.value = h2kMatchCtx.name;
+        // Defer to next tick so event handlers on the form are registered.
+        setTimeout(() => {
+            h2kForm.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+            pumpSetInfo();
+        }, 0);
+    }
+
+    // Try every 500ms for up to 30s to find the engine object and push setinfo.
+    // The built bundle may expose it on window.engine / window.xash3d / window.Xash3D.
+    // If none are found (older bundle), token never reaches the plugin and the backend
+    // safety timer will refund — rebuild the React bundle to call Cmd_ExecuteString directly.
+    function pumpSetInfo() {
+        if (!h2kMatchCtx) return;
+        const attempt = () => {
+            const eng = window.engine || window.xash3d || window.xash
+                || (window.Xash3D && window.Xash3D.instance) || null;
+            if (eng && typeof eng.Cmd_ExecuteString === 'function') {
+                try {
+                    eng.Cmd_ExecuteString(`setinfo token "${h2kMatchCtx.token || ''}"`);
+                    eng.Cmd_ExecuteString(`setinfo matchid "${h2kMatchCtx.matchId || ''}"`);
+                    if (h2kMatchCtx.connect) eng.Cmd_ExecuteString(`connect ${h2kMatchCtx.connect}`);
+                    console.log('[H2K] setinfo + connect issued to engine');
+                    return true;
+                } catch (err) { console.error('[H2K] Cmd_ExecuteString failed:', err); }
+            }
+            return false;
+        };
+        if (attempt()) return;
+        const iv = setInterval(() => { if (attempt()) clearInterval(iv); }, 500);
+        setTimeout(() => clearInterval(iv), 30000);
+    }
+
+    // ===== POLL GAME STATE FROM SERVER =====
+    async function pollState() {
+        if (!gameStarted) return;
+        try {
+            const res = await fetch('/h2k_state.json?t=' + Date.now());
+            if (!res.ok) return;
+            const state = await res.json();
+            processState(state);
+        } catch(e) {}
+    }
+
+    // Poll every 500ms
+    setInterval(pollState, 500);
+
+    function processState(s) {
+        const betPerKill = s.betPerKill || 1;
+
+        // Find me and opponent
+        const me = s.players.find(p => p.name === myName) || s.players[0];
+        const opp = s.players.find(p => p.name !== myName) || s.players[1];
+
+        // ===== STATE TRANSITIONS =====
+
+        // Countdown
+        if (s.state === 'countdown') {
+            scoreboard.style.display = 'block';
+            const color = s.countdown <= 2 ? '#ff4444' : '#ffcc00';
+            showAnnouncement(String(s.countdown), 'GET READY', color, 900);
+        }
+
+        // Match just started
+        if (s.state === 'active' && prevState !== 'active') {
+            showAnnouncement('GO!', `First to ${s.killLimit} kills — $${betPerKill} per kill`, '#00ff66', 3000);
+            timerEl.style.display = 'block';
+            scoreboard.style.display = 'block';
+            $('kill-target').textContent = s.killLimit;
+        }
+
+        // Match ended
+        if (s.state === 'ended' && prevState === 'active') {
+            timerEl.style.display = 'none';
+            if (me && opp) {
+                if (me.kills > opp.kills) {
+                    showAnnouncement('YOU WIN!', '+$' + (me.kills * betPerKill), '#00ff66', 8000);
+                } else if (me.kills < opp.kills) {
+                    showAnnouncement('YOU LOSE', '-$' + (opp.kills * betPerKill), '#ff4444', 8000);
+                } else {
+                    showAnnouncement('DRAW', 'No winner', '#ffcc00', 5000);
+                }
+            }
+        }
+
+        // Waiting
+        if (s.state === 'waiting') {
+            timerEl.style.display = 'none';
+        }
+
+        // ===== KILL FEED (detect new kills) =====
+        if (s.state === 'active' && me && opp) {
+            const myPrev = prevKills[me.name] || 0;
+            const oppPrev = prevKills[opp.name] || 0;
+
+            if (me.kills > myPrev) {
+                showKillfeed('+$' + betPerKill, true);
+            }
+            if (opp.kills > oppPrev) {
+                showKillfeed('-$' + betPerKill, false);
+            }
+        }
+
+        // ===== UPDATE SCOREBOARD =====
+        if (me && opp) {
+            $('p1-name').textContent = 'YOU';
+            $('p1-kills').textContent = me.kills;
+            $('p1-balance').textContent = '$' + (me.kills * betPerKill);
+
+            $('p2-name').textContent = opp.name.toUpperCase();
+            $('p2-kills').textContent = opp.kills;
+            $('p2-balance').textContent = '$' + (opp.kills * betPerKill);
+
+            const p1 = $('p1-score');
+            const p2 = $('p2-score');
+            p1.className = 'player-score ' + (me.kills > opp.kills ? 'winning' : me.kills < opp.kills ? 'losing' : 'tied');
+            p2.className = 'player-score ' + (opp.kills > me.kills ? 'winning' : opp.kills < me.kills ? 'losing' : 'tied');
+
+            // Track for next comparison
+            prevKills[me.name] = me.kills;
+            prevKills[opp.name] = opp.kills;
+        }
+
+        // ===== TIMER =====
+        if (s.state === 'active' && s.remaining !== undefined) {
+            const mins = Math.floor(s.remaining / 60);
+            const secs = s.remaining % 60;
+            timerEl.textContent = mins + ':' + String(secs).padStart(2, '0');
+            timerEl.className = s.remaining <= 30 ? 'urgent' : '';
+        }
+
+        prevState = s.state;
+    }
+
+    // ===== UI HELPERS =====
+
+    function showAnnouncement(bigText, subText, color, duration) {
+        const a = $('announcement');
+        a.querySelector('.big').textContent = bigText;
+        a.querySelector('.big').style.color = color;
+        a.querySelector('.sub').textContent = subText;
+        a.classList.add('show');
+        setTimeout(() => a.classList.remove('show'), duration);
+    }
+
+    let killfeedTimeout;
+    function showKillfeed(text, positive) {
+        killfeed.textContent = text;
+        killfeed.className = 'show ' + (positive ? 'positive' : 'negative');
+        clearTimeout(killfeedTimeout);
+        killfeedTimeout = setTimeout(() => killfeed.className = '', 1500);
+    }
+
+    // ===== START GAME BRIDGE =====
+
+    h2kForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        myName = h2kUsername.value || 'Player';
+
+        const origUsername = $('username');
+        const origForm = $('form');
+
+        if (origUsername && origForm) {
+            origUsername.value = myName;
+            origForm.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+            const origButton = origForm.querySelector('button[type="submit"]');
+            if (origButton) origButton.click();
+        }
+
+        h2kForm.style.display = 'none';
+        loadbar.style.display = 'block';
+        h2kStatus.textContent = 'Connecting to server...';
+
+        const checkProgress = setInterval(() => {
+            const origProgress = $('progress');
+            if (origProgress) {
+                const val = origProgress.value;
+                $('h2k-progress').value = val;
+                if (val > 0 && val < 0.3) h2kStatus.textContent = 'Downloading game assets...';
+                else if (val >= 0.3 && val < 0.8) h2kStatus.textContent = 'Loading maps and models...';
+                else if (val >= 0.8 && val < 1) h2kStatus.textContent = 'Starting engine...';
+            }
+
+            const canvas = $('canvas');
+            if (canvas && canvas.width > 100 && canvas.style.cursor === 'none') {
+                clearInterval(checkProgress);
+                startscreen.style.display = 'none';
+                crosshair.style.display = 'block';
+                scoreboard.style.display = 'block';
+                gameStarted = true;
+            }
+        }, 500);
+
+        setTimeout(() => {
+            if (startscreen.style.display !== 'none') {
+                startscreen.style.display = 'none';
+                crosshair.style.display = 'block';
+                gameStarted = true;
+            }
+        }, 30000);
+    });
+</script>
+
+</body>
+</html>

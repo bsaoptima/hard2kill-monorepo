@@ -1,0 +1,128 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Zen+Dots&display=swap');
+
+html,
+body {
+    height: 100%;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    -webkit-text-size-adjust: 100%;
+    -moz-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+    margin: 0;
+    padding: 0;
+    background-color: #000;
+}
+
+h1,
+p,
+input,
+select,
+button {
+    margin: 0;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+a {
+    color: inherit;
+    text-decoration: none;
+}
+
+a:hover {
+    text-decoration: none;
+}
+
+/* 3D Button effect */
+.btn-3d {
+    font-size: 14px;
+    font-weight: bold;
+    border: none;
+    cursor: pointer;
+    border-radius: 0.75em;
+    background: #1a7a0f;
+    padding: 0;
+    width: 100%;
+}
+
+.btn-3d-top {
+    display: block;
+    box-sizing: border-box;
+    border: 2px solid #1a7a0f;
+    border-radius: 0.75em;
+    padding: 0.75em 1.5em;
+    background: #39ff14;
+    color: #000;
+    font-weight: bold;
+    transform: translateY(-0.1em);
+    transition: transform 0.1s ease;
+}
+
+.btn-3d:hover .btn-3d-top {
+    transform: translateY(-0.15em);
+}
+
+.btn-3d:active .btn-3d-top {
+    transform: translateY(0);
+}
+
+/* Secondary button variant */
+.btn-3d-secondary {
+    background: #333;
+}
+
+.btn-3d-top-secondary {
+    border-color: #333;
+    background: #111;
+    color: #fff;
+}
+
+/* Kill reward animation */
+@keyframes killRewardPulse {
+    0% {
+        transform: translateX(-50%) scale(0.5);
+        opacity: 0;
+    }
+    50% {
+        transform: translateX(-50%) scale(1.1);
+    }
+    100% {
+        transform: translateX(-50%) scale(1);
+        opacity: 1;
+    }
+}
+
+/* Player count flash animation */
+@keyframes playerCountFlash {
+    0% {
+        box-shadow: 0 0 0 0 rgba(57, 255, 20, 0.7);
+        background-color: #111;
+    }
+    50% {
+        box-shadow: 0 0 15px 5px rgba(57, 255, 20, 0.5);
+        background-color: rgba(57, 255, 20, 0.15);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(57, 255, 20, 0);
+        background-color: #111;
+    }
+}
+
+/* Telegram button pulse animation */
+@keyframes telegramPulse {
+    0%, 100% {
+        box-shadow: 0 4px 12px rgba(0, 136, 204, 0.4);
+    }
+    50% {
+        box-shadow: 0 4px 20px rgba(0, 136, 204, 0.6);
+    }
+}
+
+/* Telegram button hover effect */
+a[style*="telegramButton"]:hover {
+    transform: scale(1.05);
+    box-shadow: 0 6px 16px rgba(0, 136, 204, 0.5) !important;
+}

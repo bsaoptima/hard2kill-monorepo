@@ -1,0 +1,81 @@
+import React, {FC, useRef} from 'react';
+import filesystemURL from 'xash3d-fwgs/filesystem_stdio.wasm'
+import xashURL from 'xash3d-fwgs/xash.wasm'
+import menuURL from 'cs16-client/cl_dll/menu_emscripten_wasm32.wasm'
+import clientURL from 'cs16-client/cl_dll/client_emscripten_wasm32.wasm'
+import serverURL from 'cs16-client/dlls/cs_emscripten_wasm32.wasm'
+import extrasURL from 'cs16-client/extras.pk3'
+import gles3URL from 'xash3d-fwgs/libref_gles3compat.wasm'
+import {loadAsync} from 'jszip'
+import {Xash3DWebRTC} from "./webrtc";
+import './App.css';
+
+const App: FC = () => {
+    const canvasRef = useRef<HTMLCanvasElement>(null)
+
+    return (
+        <>
+            <button className="Input" onClick={async () => {
+                const x = new Xash3DWebRTC({
+                    canvas: canvasRef.current!,
+                    arguments: ['-windowed', '-game', 'cstrike'],
+                    libraries: {
+                        filesystem: filesystemURL,
+                        xash: xashURL,
+                        menu: menuURL,
+                        server: serverURL,
+                        client: clientURL,
+                        render: {
+                            gles3compat: gles3URL,
+                        }
+                    },
+                    dynamicLibraries: ['dlls/cs_emscripten_wasm32.wasm', '/rodir/filesystem_stdio.wasm'],
+                    filesMap: {
+                        'dlls/cs_emscripten_wasm32.wasm': serverURL,
+                        '/rodir/filesystem_stdio.wasm': filesystemURL,
+                    },
+                });
+
+                const [zip, extras] = await Promise.all([
+                    (async () => {
+                        const res = await fetch('valve.zip')
+                        return await loadAsync(await res.arrayBuffer());
+                    })(),
+                    (async () => {
+                        const res = await fetch(extrasURL)
+                        return await res.arrayBuffer()
+                    })(),
+                    x.init(),
+                ])
+
+                if (x.exited) return
+
+                await Promise.all(Object.entries(zip.files).map(async ([filename, file]) => {
+                    if (file.dir) return;
+
+                    const path = '/rodir/' + filename;
+                    const dir = path.split('/').slice(0, -1).join('/');
+
+                    x.em.FS.mkdirTree(dir);
+                    x.em.FS.writeFile(path, await file.async("uint8array"));
+                }))
+
+                x.em.FS.writeFile('/rodir/cstrike/extras.pk3', new Uint8Array(extras))
+                x.em.FS.writeFile('/rodir/extras.pk3', new Uint8Array(extras))
+                x.em.FS.writeFile('/extras.pk3', new Uint8Array(extras))
+                console.log(x.em.FS.readdir('/rodir/valve'))
+                console.log(x.em.FS.readdir('/rodir/cstrike'))
+
+                x.em.FS.chdir('/rodir')
+                x.main()
+                x.Cmd_ExecuteString('_vgui_menus 0')
+                x.Cmd_ExecuteString('touch_enable 1')
+            }}>
+                Start
+            </button>
+            <canvas id="canvas" ref={canvasRef}/>
+        </>
+    );
+}
+
+export default App;

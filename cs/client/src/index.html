@@ -1,0 +1,248 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="icon" href="/favicon.png" type="image/png">
+    <title>Hard2Kill</title>
+    <script type="module" src="/main.ts"></script>
+
+    <style>
+        :root {
+            --bg: #0a0a0a;
+            --panel: #141414;
+            --fg: #ececec;
+            --muted: #6a6a6a;
+            --accent: #ff2e2e;
+            --accent-hover: #ff4d4d;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            background: var(--bg);
+            color: var(--fg);
+            margin: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Inter", system-ui, sans-serif;
+            overflow: hidden;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        canvas {
+            position: fixed;
+            inset: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 1;
+            display: block;
+            background: var(--bg);
+        }
+
+        /* ============ Splash (boot + loading) ============ */
+        #splash {
+            position: fixed;
+            inset: 0;
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: radial-gradient(ellipse at center, #151515 0%, var(--bg) 80%);
+            padding: 24px;
+            transition: opacity 0.4s ease-out;
+        }
+
+        #splash.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .brand {
+            font-size: clamp(52px, 11vw, 112px);
+            font-weight: 900;
+            letter-spacing: -0.02em;
+            margin: 0;
+            text-transform: uppercase;
+            line-height: 1;
+        }
+
+        .brand-accent { color: var(--accent); }
+
+        .tagline {
+            color: var(--muted);
+            font-size: clamp(13px, 1.6vw, 15px);
+            margin: 12px 0 56px;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+        }
+
+        .controls {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 14px;
+            width: min(360px, 92vw);
+        }
+
+        #username {
+            background: var(--panel);
+            border: 1px solid #2a2a2a;
+            color: var(--fg);
+            padding: 12px 16px;
+            font-size: 14px;
+            font-family: inherit;
+            border-radius: 3px;
+            width: 100%;
+            text-align: center;
+            letter-spacing: 0.02em;
+            transition: border-color 0.15s;
+        }
+
+        #username::placeholder { color: #444; }
+        #username:focus { outline: none; border-color: var(--accent); }
+
+        .progress-wrap {
+            width: 100%;
+            margin-top: 8px;
+        }
+
+        .progress-bar {
+            height: 3px;
+            background: #202020;
+            border-radius: 2px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            width: 0%;
+            background: var(--accent);
+            transition: width 0.15s ease-out;
+        }
+
+        .progress-text {
+            font-size: 11px;
+            color: var(--muted);
+            font-variant-numeric: tabular-nums;
+            text-align: center;
+            margin-top: 8px;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+        }
+
+        #join {
+            background: var(--accent);
+            color: #fff;
+            border: none;
+            padding: 16px 48px;
+            font-size: 15px;
+            font-weight: 800;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            border-radius: 3px;
+            cursor: pointer;
+            transition: background 0.15s, transform 0.05s;
+            margin-top: 8px;
+            width: 100%;
+        }
+
+        #join:hover:not(:disabled) { background: var(--accent-hover); }
+        #join:active:not(:disabled) { transform: translateY(1px); }
+
+        #join:disabled {
+            background: #1e1e1e;
+            color: #3a3a3a;
+            cursor: not-allowed;
+        }
+
+        .hint {
+            color: #3a3a3a;
+            font-size: 11px;
+            margin-top: 24px;
+            text-align: center;
+            letter-spacing: 0.03em;
+            max-width: 320px;
+        }
+
+        /* ============ Reconnect overlay ============ */
+        #reconnect-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 20;
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: rgba(10, 10, 10, 0.94);
+            backdrop-filter: blur(4px);
+        }
+
+        #reconnect-overlay.visible { display: flex; }
+
+        .reconnect-label {
+            color: var(--muted);
+            font-size: 13px;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            margin-bottom: 16px;
+        }
+
+        #reconnect-btn {
+            background: var(--accent);
+            color: #fff;
+            border: none;
+            padding: 14px 40px;
+            font-size: 14px;
+            font-weight: 800;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+
+        /* Used by webrtc.ts — shown if mic permission isn't granted
+           within 10s, hidden once WebRTC channels open. */
+        #warning {
+            position: fixed;
+            left: 0;
+            right: 0;
+            bottom: 24px;
+            z-index: 15;
+            text-align: center;
+            color: var(--accent);
+            font-size: 12px;
+            letter-spacing: 0.04em;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease-in-out;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="canvas"></canvas>
+    <p id="warning">If the match doesn't start, enable microphone access and refresh</p>
+
+    <div id="splash">
+        <h1 class="brand">Hard<span class="brand-accent">2</span>Kill</h1>
+        <p class="tagline">Play For Money. No More Middleman</p>
+
+        <div class="controls">
+            <input id="username" type="text" placeholder="Choose a name" maxlength="32" autocomplete="off" />
+
+            <div class="progress-wrap">
+                <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
+                <div class="progress-text" id="progress-text">Preparing…</div>
+            </div>
+
+            <button id="join" disabled>Loading</button>
+        </div>
+
+        <p class="hint">Deathmatch • de_dust2 • respawn instant • pick your weapon on spawn</p>
+    </div>
+
+    <div id="reconnect-overlay">
+        <div class="reconnect-label">Connection dropped</div>
+        <button id="reconnect-btn">Reconnect</button>
+    </div>
+</body>
+</html>

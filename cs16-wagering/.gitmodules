@@ -1,0 +1,10 @@
+[submodule "packages/cs16-client/cs16-client"]
+	path = packages/cs16-client/cs16-client
+	url = https://github.com/yohimik/cs16-client.git
+[submodule "packages/hlsdk-portable/hlsdk-portable"]
+	path = packages/hlsdk-portable/hlsdk-portable
+	url = https://github.com/yohimik/hlsdk-portable.git
+[submodule "packages/xash3d-fwgs/xash3d-fwgs"]
+	path = packages/xash3d-fwgs/xash3d-fwgs
+	url = https://github.com/yohimik/xash3d-fwgs
+	branch = merged

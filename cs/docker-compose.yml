@@ -1,0 +1,41 @@
+services:
+  cs16:
+    image: yohimik/cs-web-server-metpamx:latest
+    container_name: cs16
+    command: ["+map", "de_dust2", "+maxplayers", "4"]
+    restart: always
+    platform: linux/386
+    environment:
+      PORT: 27018
+      IP: ${DROPLET_IP:-161.35.99.157}
+    volumes:
+      # Read-only bind-mounts so settings survive container recreation.
+      - "./cs-server/server.cfg:/xashds/cstrike/server.cfg:ro"
+      - "${VALVE_ZIP:-/root/valve.zip}:/xashds/public/valve.zip:ro"
+    ports:
+      - "27016:27016"
+      - "27018:27018"
+      - "27018:27018/udp"
+
+  # Wagering sidecar — tails h2k_events.jsonl on the cs16 HTTP server,
+  # verifies token HMACs against CS16_WEBHOOK_SECRET, and POSTs match
+  # results to MATCH_WEBHOOK_URL (hard2kill.com /api/cs16/match-result).
+  # Activates only when the env vars below are set in .env.
+  sidecar:
+    build: ./sidecar
+    container_name: h2k-sidecar
+    restart: always
+    depends_on:
+      - cs16
+    environment:
+      EVENTS_URL: http://cs16:27016/h2k_events.jsonl
+      OFFSET_FILE: /state/events.offset
+      SEEN_FILE: /state/events.seen
+      H2K_WEBHOOK_URL: ${MATCH_WEBHOOK_URL:-}
+      CS16_WEBHOOK_SECRET: ${CS16_WEBHOOK_SECRET:-}
+      POLL_INTERVAL_MS: "1000"
+    volumes:
+      - "h2k_sidecar_state:/state"
+
+volumes:
+  h2k_sidecar_state:
