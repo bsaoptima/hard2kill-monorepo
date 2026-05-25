@@ -132,6 +132,8 @@
   --font-mono: var(--font-jetbrains), "JetBrains Mono", ui-monospace, monospace;
 }
 
+html { color-scheme: dark; }
+
 :root[data-theme="midnight"] {
   --bg:        #07080a;
   --bg-elev:   #0f1114;
@@ -187,8 +189,22 @@
   color: var(--ink);
   font-family: var(--font-display);
   font-feature-settings: "ss01", "ss02";
+  accent-color: var(--accent);
+  color-scheme: dark;
 }
 .landing-root * { box-sizing: border-box; }
+/* eliminate iOS 300ms tap delay + force pointer events through to interactives */
+.landing-root button,
+.landing-root .stake-btn,
+.landing-root .play-btn,
+.landing-root .faq-row,
+.landing-root .live-tab,
+.landing-root a {
+  touch-action: manipulation;
+  pointer-events: auto;
+  position: relative;
+  z-index: 1;
+}
 
 /* utilities (scoped) */
 .landing-root .mono { font-family: var(--font-mono); font-feature-settings: "zero", "ss01"; }
@@ -224,6 +240,7 @@
 .landing-root .hero-stage {
   position: absolute; inset: 0;
   z-index: 0;
+  pointer-events: none;
 }
 .landing-root .hero-stage::after {
   content: ""; position: absolute; inset: 0;
@@ -367,6 +384,8 @@
 .landing-root .live-table tbody tr:last-child td { border-bottom: 0; }
 
 .landing-root .players-cell { display: flex; align-items: center; gap: 10px; }
+/* mobile-only winner span; hidden by default, shown via media query */
+.landing-root .winner-mobile { display: none; }
 .landing-root .avatar {
   width: 22px; height: 22px; border-radius: 50%;
   display: inline-flex; align-items: center; justify-content: center;
@@ -456,6 +475,7 @@
 }
 .landing-root .hero.hero-grid .glass-card {
   position: relative;
+  z-index: 5;
   background: linear-gradient(180deg,
     color-mix(in oklab, var(--bg-card) 60%, transparent) 0%,
     color-mix(in oklab, var(--bg) 70%, transparent) 100%);
@@ -638,7 +658,30 @@
 .landing-root .street-tile .crosshair::after  { top: 50%; left: 0; right: 0; height: 1px; transform: translateY(-50%); }
 
 @media (max-width: 860px) {
-  .landing-root .live-grid { grid-template-columns: repeat(2, 1fr); grid-template-rows: repeat(4, 1fr); }
+  /* Mobile: only show 6 tiles in a 2×3 grid (tiles 7-12 are hidden). */
+  .landing-root .live-grid {
+    grid-template-columns: repeat(2, 1fr);
+    grid-template-rows: repeat(3, 1fr);
+  }
+  .landing-root .street-tile:nth-child(n+7) { display: none; }
+
+  /* Mobile: darker glass card so text reads cleanly over the grid. */
+  .landing-root .hero.hero-grid .glass-card {
+    background: linear-gradient(180deg,
+      color-mix(in oklab, var(--bg-card) 88%, transparent) 0%,
+      color-mix(in oklab, var(--bg) 92%, transparent) 100%);
+  }
+
+  /* Mobile: tighten hero vertical padding (default was 6vh top / 4vh bottom
+     + the full viewport min-height which made the section feel oversized). */
+  .landing-root .hero.hero-grid .hero-content {
+    min-height: 0;
+    padding-top: 24px;
+    padding-bottom: 24px;
+  }
+  .landing-root .hero {
+    min-height: 0;
+  }
 }
 
 @media (max-width: 900px) {
@@ -646,8 +689,74 @@
   .landing-root .hero-stat { border-right: 0; border-bottom: 1px solid var(--line); }
   .landing-root .hero-stat:last-child { border-bottom: 0; }
   .landing-root .hero-stat-pitch .pitch { max-width: none; }
-  .landing-root .section { padding: 64px 20px 48px; }
+  .landing-root .section { padding: 48px 16px 40px; }
   .landing-root .container, .landing-root .hero-footstats-inner, .landing-root .landing-footer, .landing-root .hero-content { padding-left: 20px; padding-right: 20px; }
-  .landing-root .live-table thead th:nth-child(4),
+
+  /* Compact section header on mobile */
+  .landing-root .section-head { margin-bottom: 18px; }
+  .landing-root .section-sub { font-size: 13px; }
+
+  /* Latest wins on mobile: just winner + amount won, one row each.
+     - Header hidden, table acts as a list
+     - Desktop "players-cell" (with vs + opponent) hidden, mobile-only winner shown
+     - Stake + Time columns hidden — only Pot remains as the amount won
+     - 6 rows max */
+  .landing-root .live-tabs { display: none; }
+  .landing-root .live-table thead { display: none; }
+  .landing-root .live-table,
+  .landing-root .live-table tbody { display: block; width: 100%; }
+
+  .landing-root .live-table tbody tr {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--line);
+  }
+  .landing-root .live-table tbody tr:last-child { border-bottom: 0; }
+  .landing-root .live-table tbody tr:hover td { background: transparent; }
+  .landing-root .live-table tbody td {
+    display: block;
+    padding: 0;
+    border: 0;
+  }
+
+  /* Hide the desktop players-cell on mobile; show the simple winner span */
+  .landing-root .players-cell { display: none; }
+  .landing-root .winner-mobile {
+    display: block;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--ink);
+    font-family: var(--font-mono);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    min-width: 0;
+  }
+
+  /* Players cell is the flex item that grows */
+  .landing-root .live-table tbody td:nth-child(1) {
+    flex: 1;
+    min-width: 0;
+  }
+
+  /* Stake — hidden */
+  .landing-root .live-table tbody td:nth-child(2) { display: none; }
+
+  /* Pot — right side, the amount won */
+  .landing-root .live-table tbody td:nth-child(3) {
+    text-align: right;
+    font-size: 15px;
+    font-weight: 600;
+    flex-shrink: 0;
+  }
+
+  /* Time — hidden */
   .landing-root .live-table tbody td:nth-child(4) { display: none; }
+
+  /* Trim to 6 rows on mobile */
+  .landing-root .live-table tbody tr:nth-child(n+7) { display: none; }
 }
+

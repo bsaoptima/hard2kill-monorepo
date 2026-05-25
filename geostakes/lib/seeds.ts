@@ -1,11 +1,11 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { calculateDistanceKm, calculateRoundScore } from "@/lib/scoring";
-import { creditCash, deductCash } from "@/lib/balance";
+import { creditCash, deductCash, recordTransaction } from "@/lib/balance";
 import { resolvePanoId } from "@/lib/maps";
 import { sendSeedResolveEmail, sendAdminSeedAlert } from "@/lib/email";
 
 export const ROUND_COUNT = 5;
-export const ROUND_DURATION_SEC = 60;
+export const ROUND_DURATION_SEC = 25;
 export const HOUSE_RAKE = 0.1;
 export const ALLOWED_BET_AMOUNTS = [1, 5, 10] as const;
 
@@ -108,6 +108,9 @@ export async function startPlay(opts: {
       return { error: playErr?.message ?? "Failed to create play" };
     }
 
+    // Log the bet (fire-and-forget audit trail).
+    void recordTransaction(userId, betAmount, "bet");
+
     return { playId: play.id, seedId: matchedSeedId, role: "challenger" };
   }
 
@@ -159,6 +162,9 @@ export async function startPlay(opts: {
     await creditCash(userId, betAmount);
     return { error: playErr?.message ?? "Failed to create play" };
   }
+
+  // Log the bet (fire-and-forget audit trail).
+  void recordTransaction(userId, betAmount, "bet");
 
   return { playId: play.id, seedId: seed.id, role: "creator" };
 }
@@ -380,18 +386,29 @@ async function notifyAdminOnCreatorComplete(opts: {
 }
 
 // =========================================================================
-// resolveSeed — compare creator + challenger scores, pay out winner.
+// resolveSeed — atomic via Postgres function. Credits winner (or refunds
+// both on tie), inserts audit transactions, writes game_history, and
+// updates seed status all in a single transaction. Either all changes
+// land or none do.
 // =========================================================================
 export async function resolveSeed(seedId: string): Promise<void> {
   const supabase = createAdminClient();
 
+  const { error: rpcErr } = await supabase.rpc("resolve_geostakes_seed", {
+    p_seed_id: seedId,
+  });
+  if (rpcErr) {
+    console.error("[resolveSeed] RPC failed", rpcErr);
+    return;
+  }
+
+  // RPC committed — fetch the resolved seed + plays for the email step.
   const { data: seed } = await supabase
     .from("geostakes_seeds")
     .select("*")
     .eq("id", seedId)
     .maybeSingle();
-
-  if (!seed || seed.status !== "matched") return;
+  if (!seed || seed.status !== "resolved") return;
 
   const { data: plays } = await supabase
     .from("geostakes_seed_plays")
@@ -405,53 +422,13 @@ export async function resolveSeed(seedId: string): Promise<void> {
     return;
   }
 
-  const creatorScore = creatorPlay.total_score;
-  const challengerScore = challengerPlay.total_score;
-  const pot = Number(seed.bet_amount) * 2;
-
-  let winnerId: string | null = null;
-  if (creatorScore > challengerScore) winnerId = creatorPlay.user_id;
-  else if (challengerScore > creatorScore) winnerId = challengerPlay.user_id;
-
-  if (winnerId) {
-    const payout = pot * (1 - HOUSE_RAKE);
-    await creditCash(winnerId, payout);
-    const loserId =
-      winnerId === creatorPlay.user_id
-        ? challengerPlay.user_id
-        : creatorPlay.user_id;
-    await supabase.from("game_history").insert({
-      winner_id: winnerId,
-      loser_id: loserId,
-      amount: payout,
-      currency: seed.currency,
-      game: "geostakes",
-      started_at: seed.created_at,
-      ended_at: new Date().toISOString(),
-    });
-  } else {
-    // Tie: full refund both, no rake.
-    await creditCash(creatorPlay.user_id, Number(seed.bet_amount));
-    await creditCash(challengerPlay.user_id, Number(seed.bet_amount));
-  }
-
-  await supabase
-    .from("geostakes_seeds")
-    .update({
-      status: "resolved",
-      winner_user_id: winnerId,
-      resolved_at: new Date().toISOString(),
-    })
-    .eq("id", seedId);
-
-  // Fire-and-forget email to both players. Errors logged, never thrown,
-  // so a Resend outage can't break resolution.
+  // Fire-and-forget email to both players. Errors logged, never thrown.
   void notifyPlayersOnResolve({
     creatorPlay,
     challengerPlay,
-    creatorScore,
-    challengerScore,
-    winnerId,
+    creatorScore: creatorPlay.total_score,
+    challengerScore: challengerPlay.total_score,
+    winnerId: seed.winner_user_id,
     betAmount: Number(seed.bet_amount),
     seedId,
   });
@@ -769,6 +746,11 @@ export async function timeoutSweep(): Promise<{
   let refundedOpen = 0;
   for (const s of openExpired ?? []) {
     await creditCash(s.creator_user_id, Number(s.bet_amount));
+    void recordTransaction(
+      s.creator_user_id,
+      Number(s.bet_amount),
+      "refund",
+    );
     await supabase
       .from("geostakes_seeds")
       .update({
@@ -792,6 +774,11 @@ export async function timeoutSweep(): Promise<{
   for (const s of matchedExpired ?? []) {
     if (!s.matched_user_id) continue;
     await creditCash(s.matched_user_id, Number(s.bet_amount));
+    void recordTransaction(
+      s.matched_user_id,
+      Number(s.bet_amount),
+      "refund",
+    );
     await supabase
       .from("geostakes_seeds")
       .update({

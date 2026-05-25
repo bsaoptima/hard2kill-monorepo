@@ -58,7 +58,7 @@ export async function deductCash(
 export async function recordTransaction(
   userId: string,
   amount: number,
-  type: "deposit" | "withdraw" | "bet" | "win",
+  type: "deposit" | "withdraw" | "bet" | "win" | "refund",
 ): Promise<void> {
   const supabase = createAdminClient();
   await supabase.from("transactions").insert({

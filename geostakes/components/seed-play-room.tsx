@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import type { SeedPlayState } from "@/lib/seeds";
 import { useSeedPlayState } from "@/lib/use-seed-play-state";
@@ -9,7 +10,7 @@ import { StreetView } from "@/components/match/street-view";
 import { GuessMap } from "@/components/match/guess-map";
 import { ResultMap } from "@/components/match/result-map";
 
-const ROUND_DURATION_SEC = 60;
+const ROUND_DURATION_SEC = 25;
 
 type Phase = "playing" | "roundResult" | "waiting" | "resolved";
 
@@ -354,6 +355,14 @@ function ResolutionScreen({
   youWon: boolean | null;
   payout: number;
 }) {
+  const router = useRouter();
+  // Refresh the server-rendered Header balance once the seed has resolved.
+  // The win was credited server-side; this pulls the new number into the UI
+  // without forcing the user to navigate.
+  useEffect(() => {
+    router.refresh();
+  }, [router]);
+
   let banner: string;
   let bannerClass: string;
   if (youWon === null) {

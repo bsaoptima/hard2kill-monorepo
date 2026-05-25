@@ -357,6 +357,7 @@ function LiveGames() {
                         {g.b}
                       </span>
                     </div>
+                    <div className="winner-mobile">{g.winner}</div>
                   </td>
                   <td>${g.stake}</td>
                   <td style={{ color: "var(--accent)", fontWeight: 600 }}>
@@ -390,7 +391,7 @@ const FAQ_ITEMS = [
   },
   {
     q: "What stops people from cheating?",
-    a: "Same player can never play a seed twice. 60-second per-round timer prevents Google lookup. Score-band matching keeps superhuman scores quarantined to other cheaters. Three locks, layered.",
+    a: "Same player can never play a seed twice. 25-second per-round timer prevents Google lookup. Score-band matching keeps superhuman scores quarantined to other cheaters. Three locks, layered.",
   },
   {
     q: "How does matchmaking work?",
@@ -461,14 +462,8 @@ function Footer() {
 // ─────────────────────────────────────────────────────────────────────────────
 
 export default function Home() {
-  useEffect(() => {
-    document.documentElement.setAttribute("data-theme", "midnight");
-    document.documentElement.setAttribute("data-font", "anton");
-    return () => {
-      document.documentElement.removeAttribute("data-theme");
-      document.documentElement.removeAttribute("data-font");
-    };
-  }, []);
+  // data-theme + data-font are applied to <html> in layout.tsx so they're
+  // present at SSR (no flash of unstyled buttons on slow mobile devices).
 
   return (
     <div className="landing-root">
