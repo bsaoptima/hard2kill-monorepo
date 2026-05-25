@@ -16,7 +16,13 @@ export function LogoutButton() {
     <button
       type="button"
       onClick={handleLogout}
-      className="bg-transparent text-muted-foreground border border-border px-4 py-2 rounded-sm cursor-pointer text-[13px] hover:text-foreground hover:border-muted-foreground transition-colors"
+      className="bg-transparent text-foreground border border-[var(--line-2,#2a2f37)] px-6 py-2.5 rounded-xl cursor-pointer uppercase tracking-[0.02em] hover:border-foreground hover:-translate-y-px transition-all"
+      style={{
+        fontFamily: "var(--font-anton), Anton, 'Space Grotesk', sans-serif",
+        fontStyle: "italic",
+        fontWeight: 400,
+        fontSize: "16px",
+      }}
     >
       Logout
     </button>

@@ -2,6 +2,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { calculateDistanceKm, calculateRoundScore } from "@/lib/scoring";
 import { creditCash, deductCash } from "@/lib/balance";
 import { resolvePanoId } from "@/lib/maps";
+import { sendSeedResolveEmail, sendAdminSeedAlert } from "@/lib/email";
 
 export const ROUND_COUNT = 5;
 export const ROUND_DURATION_SEC = 60;
@@ -332,9 +333,49 @@ export async function completePlay(playId: string): Promise<void> {
       })
       .eq("id", play.seed_id)
       .eq("status", "open");
+
+    // Fire-and-forget admin alert so Stefan can manually seed liquidity by
+    // jumping in as challenger. Errors logged + swallowed.
+    void notifyAdminOnCreatorComplete({
+      creatorUserId: play.user_id,
+      creatorScore: totalScore,
+      seedId: play.seed_id,
+    });
   } else {
     // Challenger finished: resolve the seed.
     await resolveSeed(play.seed_id);
+  }
+}
+
+async function notifyAdminOnCreatorComplete(opts: {
+  creatorUserId: string;
+  creatorScore: number;
+  seedId: string;
+}): Promise<void> {
+  try {
+    const supabase = createAdminClient();
+    const { creatorUserId, creatorScore, seedId } = opts;
+
+    const [{ data: seed }, creatorAuth] = await Promise.all([
+      supabase
+        .from("geostakes_seeds")
+        .select("bet_amount")
+        .eq("id", seedId)
+        .maybeSingle(),
+      supabase.auth.admin.getUserById(creatorUserId),
+    ]);
+
+    const creatorEmail = creatorAuth.data.user?.email;
+    if (!seed || !creatorEmail) return;
+
+    await sendAdminSeedAlert({
+      creatorEmail,
+      creatorScore,
+      betAmount: Number(seed.bet_amount),
+      seedId,
+    });
+  } catch (err) {
+    console.error("[notifyAdminOnCreatorComplete] failed", err);
   }
 }
 
@@ -402,6 +443,109 @@ export async function resolveSeed(seedId: string): Promise<void> {
       resolved_at: new Date().toISOString(),
     })
     .eq("id", seedId);
+
+  // Fire-and-forget email to both players. Errors logged, never thrown,
+  // so a Resend outage can't break resolution.
+  void notifyPlayersOnResolve({
+    creatorPlay,
+    challengerPlay,
+    creatorScore,
+    challengerScore,
+    winnerId,
+    betAmount: Number(seed.bet_amount),
+    seedId,
+  });
+}
+
+async function notifyPlayersOnResolve(opts: {
+  creatorPlay: { user_id: string; total_score: number | null };
+  challengerPlay: { user_id: string; total_score: number | null };
+  creatorScore: number;
+  challengerScore: number;
+  winnerId: string | null;
+  betAmount: number;
+  seedId: string;
+}): Promise<void> {
+  try {
+    const supabase = createAdminClient();
+    const {
+      creatorPlay,
+      challengerPlay,
+      creatorScore,
+      challengerScore,
+      winnerId,
+      betAmount,
+      seedId,
+    } = opts;
+
+    // Fetch emails + playIds for both players in parallel.
+    const [creatorAuth, challengerAuth, playRows] = await Promise.all([
+      supabase.auth.admin.getUserById(creatorPlay.user_id),
+      supabase.auth.admin.getUserById(challengerPlay.user_id),
+      supabase
+        .from("geostakes_seed_plays")
+        .select("id, user_id")
+        .eq("seed_id", seedId),
+    ]);
+
+    const creatorEmail = creatorAuth.data.user?.email;
+    const challengerEmail = challengerAuth.data.user?.email;
+    const creatorPlayId = playRows.data?.find(
+      (p) => p.user_id === creatorPlay.user_id,
+    )?.id;
+    const challengerPlayId = playRows.data?.find(
+      (p) => p.user_id === challengerPlay.user_id,
+    )?.id;
+
+    const pot = betAmount * 2;
+    const payout = pot * (1 - HOUSE_RAKE);
+
+    // Creator email
+    if (creatorEmail && creatorPlayId) {
+      const outcome: "won" | "lost" | "tied" =
+        winnerId === null
+          ? "tied"
+          : winnerId === creatorPlay.user_id
+            ? "won"
+            : "lost";
+      const creatorPayout =
+        outcome === "won" ? payout : outcome === "tied" ? betAmount : 0;
+      void sendSeedResolveEmail({
+        to: creatorEmail,
+        outcome,
+        yourScore: creatorScore,
+        opponentScore: challengerScore,
+        betAmount,
+        payout: creatorPayout,
+        seedId,
+        playId: creatorPlayId,
+      });
+    }
+
+    // Challenger email
+    if (challengerEmail && challengerPlayId) {
+      const outcome: "won" | "lost" | "tied" =
+        winnerId === null
+          ? "tied"
+          : winnerId === challengerPlay.user_id
+            ? "won"
+            : "lost";
+      const challengerPayout =
+        outcome === "won" ? payout : outcome === "tied" ? betAmount : 0;
+      void sendSeedResolveEmail({
+        to: challengerEmail,
+        outcome,
+        yourScore: challengerScore,
+        opponentScore: creatorScore,
+        betAmount,
+        payout: challengerPayout,
+        seedId,
+        playId: challengerPlayId,
+      });
+    }
+  } catch (err) {
+    console.error("[notifyPlayersOnResolve] failed", err);
+  }
 }
 
 // =========================================================================
