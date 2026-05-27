@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Inter, Anton, Space_Grotesk, JetBrains_Mono } from "next/font/google";
+import Script from "next/script";
 import "./globals.css";
 import { Header } from "@/components/header";
 import { Toaster } from "@/components/ui/sonner";
@@ -53,6 +54,11 @@ export default function RootLayout({
         <Header />
         <main className="flex-1 flex flex-col">{children}</main>
         <Toaster />
+        <Script
+          src="https://cloud.umami.is/script.js"
+          data-website-id="c1657370-4b18-4188-8719-af5eb165dc8c"
+          strategy="afterInteractive"
+        />
       </body>
     </html>
   );
