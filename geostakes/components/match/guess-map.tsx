@@ -6,10 +6,10 @@ import { GUESS_MAP_OPTIONS } from "@/lib/google-map-options";
 
 type LatLng = { lat: number; lng: number };
 
-const COLLAPSED_SIZE = "min(15vw, 220px)";
-const COLLAPSED_HEIGHT = "min(15vh, 180px)";
+const COLLAPSED_SIZE = "min(24vw, 320px)";
+const COLLAPSED_HEIGHT = "min(28vh, 280px)";
 const EXPANDED_SIZE = "min(38vw, 560px)";
-const EXPANDED_HEIGHT = "min(40vh, 460px)";
+const EXPANDED_HEIGHT = "min(42vh, 480px)";
 
 export function GuessMap({
   disabled,
@@ -27,6 +27,14 @@ export function GuessMap({
   const [hovering, setHovering] = useState(false);
   const [pinned, setPinned] = useState(false);
 
+  // Mirror `disabled` into a ref so the click listener (registered once
+  // when the map is first created) always reads the latest value rather
+  // than the closure value from initial mount.
+  const disabledRef = useRef(disabled);
+  useEffect(() => {
+    disabledRef.current = disabled;
+  }, [disabled]);
+
   // Initialize map once.
   useEffect(() => {
     if (!ready || !containerRef.current || mapRef.current) return;
@@ -37,8 +45,17 @@ export function GuessMap({
       zoom: 1,
     });
 
+    // Force a resize right after init — without this, the first paint can
+    // leave the map blank/gray until the next hover-driven size change.
+    requestAnimationFrame(() => {
+      if (mapRef.current) {
+        google.maps.event.trigger(mapRef.current, "resize");
+        mapRef.current.setCenter({ lat: 20, lng: 0 });
+      }
+    });
+
     mapRef.current.addListener("click", (e: google.maps.MapMouseEvent) => {
-      if (!e.latLng || disabled) return;
+      if (!e.latLng || disabledRef.current) return;
       const point = { lat: e.latLng.lat(), lng: e.latLng.lng() };
       setGuess(point);
 
@@ -119,7 +136,7 @@ export function GuessMap({
 
       <div
         ref={containerRef}
-        className="flex-1 bg-card rounded-sm overflow-hidden cursor-crosshair"
+        className="flex-1 min-h-[140px] bg-card rounded-sm overflow-hidden cursor-crosshair ring-1 ring-white/20 shadow-[0_6px_24px_rgba(0,0,0,0.45)]"
       />
 
       <button

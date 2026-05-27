@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -31,15 +31,19 @@ export function SeedPlayRoom({
   const result = rest as unknown as { kind: "loading" | "ok" | "error" };
   const s: SeedPlayState = result.kind === "ok" ? state : initialState;
 
-  const [shownRound, setShownRound] = useState<number | null>(null);
-
   const lastCompleted = s.completedRounds[s.completedRounds.length - 1];
+  // Show the per-round result screen when the user has just submitted (or
+  // had the round auto-zeroed) but hasn't yet clicked Continue. The
+  // server keeps current_round fixed until next-round is called, so the
+  // round under review is current_round itself — we stay on this screen
+  // until that flips, which avoids briefly remounting PlayingScreen with
+  // stale round-1 props (wrong panoId / disabled map closure).
   const justFinishedRound =
     lastCompleted &&
-    shownRound !== lastCompleted.roundNumber &&
     (s.yourPlayComplete
       ? lastCompleted.roundNumber === 5 && !s.resolution && !s.waitingForOpponent
-      : lastCompleted.roundNumber === s.currentRound - 1)
+      : s.yourSubmittedThisRound &&
+        lastCompleted.roundNumber === s.currentRound)
       ? lastCompleted
       : null;
 
@@ -87,9 +91,9 @@ export function SeedPlayRoom({
         round={justFinishedRound}
         roundNumber={justFinishedRound.roundNumber}
         isLastRound={justFinishedRound.roundNumber === 5}
-        onContinue={() => {
-          setShownRound(justFinishedRound.roundNumber);
-          void refetch();
+        playId={playId}
+        onContinue={async () => {
+          await refetch();
         }}
       />
     );
@@ -227,23 +231,37 @@ function RoundResultScreen({
   round,
   roundNumber,
   isLastRound,
+  playId,
   onContinue,
 }: {
   round: SeedPlayState["completedRounds"][number];
   roundNumber: number;
   isLastRound: boolean;
-  onContinue: () => void;
+  playId: string;
+  onContinue: () => Promise<void> | void;
 }) {
-  useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      if (e.key === " " || e.key === "Enter") {
-        e.preventDefault();
-        onContinue();
+  const [advancing, setAdvancing] = useState(false);
+
+  const advance = async () => {
+    if (advancing) return;
+    setAdvancing(true);
+    try {
+      const res = await fetch(`/api/seeds/plays/${playId}/next-round`, {
+        method: "POST",
+        cache: "no-store",
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        toast.error(body?.error ?? "Failed to continue");
+        return;
       }
-    };
-    document.addEventListener("keydown", handler);
-    return () => document.removeEventListener("keydown", handler);
-  }, [onContinue]);
+      // Wait for the refetch to land so PlayingScreen mounts with the
+      // fresh round-N+1 state (correct panoId, disabled=false).
+      await onContinue();
+    } finally {
+      setAdvancing(false);
+    }
+  };
 
   const fmtDistance = (m: number) => {
     if (m < 1000) return `${Math.round(m)} m`;
@@ -253,7 +271,7 @@ function RoundResultScreen({
   };
 
   return (
-    <div className="absolute inset-0 grid grid-rows-[1fr_220px]">
+    <div className="absolute inset-0 grid grid-rows-[1fr_300px]">
       <ResultMap
         yourGuess={
           round.yourGuess
@@ -263,7 +281,7 @@ function RoundResultScreen({
         opponentGuess={null}
         truth={round.truth}
       />
-      <div className="bg-card p-8 flex flex-col items-center justify-center gap-4">
+      <div className="bg-card px-8 py-12 flex flex-col items-center justify-center gap-5">
         <div className="text-[12px] uppercase tracking-wider text-muted-foreground">
           Round {roundNumber} result
         </div>
@@ -275,16 +293,19 @@ function RoundResultScreen({
             ? `You were ${fmtDistance(round.yourGuess.distanceMeters)} from the target`
             : "No guess submitted"}
         </div>
+        {(round.yourGuess?.points ?? 0) >= 4000 ? (
+          <div className="px-4 py-2 rounded-sm bg-[#39ff14]/10 ring-1 ring-[#39ff14]/40 text-[#39ff14] text-base font-bold tracking-wider uppercase">
+            + $10 won
+          </div>
+        ) : null}
         <button
           type="button"
-          onClick={onContinue}
-          className="mt-2 bg-primary text-primary-foreground border-none px-8 py-3 rounded-sm text-sm font-bold uppercase tracking-[0.1em]"
+          onClick={() => void advance()}
+          disabled={advancing}
+          className="mt-2 bg-primary text-primary-foreground border-none px-8 py-3 rounded-sm text-sm font-bold uppercase tracking-[0.1em] disabled:opacity-60"
         >
-          {isLastRound ? "See result" : "Continue"} →
+          {advancing ? "…" : `${isLastRound ? "See result" : "Continue"} →`}
         </button>
-        <div className="text-[11px] text-muted-foreground">
-          Press space or enter to continue
-        </div>
       </div>
     </div>
   );

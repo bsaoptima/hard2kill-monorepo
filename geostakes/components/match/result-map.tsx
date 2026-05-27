@@ -139,11 +139,37 @@ export function ResultMap({
     }
   }, [ready, yourGuess, opponentGuess, truth, showAllRounds, allRounds]);
 
+  const showOpponentLegend = Boolean(
+    opponentGuess ||
+      (showAllRounds && allRounds?.some((r) => r.opponentGuess)),
+  );
+
   return (
-    <div
-      ref={containerRef}
-      className="w-full h-full bg-secondary"
-      aria-label="Result map"
-    />
+    <div className="relative w-full h-full">
+      <div
+        ref={containerRef}
+        className="absolute inset-0 bg-secondary"
+        aria-label="Result map"
+      />
+      <div className="absolute top-3 left-3 z-10 bg-black/70 text-white rounded-sm px-3 py-2 backdrop-blur text-[11px] leading-tight flex flex-col gap-1">
+        <LegendRow color={TRUTH_COLOR} label="Actual location" />
+        <LegendRow color={YOU_COLOR} label="Your guess" />
+        {showOpponentLegend ? (
+          <LegendRow color={OPPONENT_COLOR} label="Opponent's guess" />
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
+function LegendRow({ color, label }: { color: string; label: string }) {
+  return (
+    <div className="flex items-center gap-2">
+      <span
+        className="inline-block w-2.5 h-2.5 rounded-full ring-1 ring-white/80"
+        style={{ backgroundColor: color }}
+      />
+      <span className="uppercase tracking-wider text-white/90">{label}</span>
+    </div>
   );
 }

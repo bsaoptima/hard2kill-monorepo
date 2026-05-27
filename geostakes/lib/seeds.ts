@@ -205,7 +205,10 @@ export async function submitSeedGuess(opts: {
   const elapsedSec =
     (Date.now() - new Date(play.round_started_at).getTime()) / 1000;
   if (elapsedSec > ROUND_DURATION_SEC) {
-    await advancePlayRound(playId);
+    // Lock the round with a zero-point guess if one isn't already recorded,
+    // but DO NOT advance current_round — the user controls progression via
+    // the explicit "Continue" / "next-round" call.
+    await lockExpiredRound(playId);
     return { error: "Round timer expired" };
   }
 
@@ -242,9 +245,84 @@ export async function submitSeedGuess(opts: {
     points,
   });
 
-  await advancePlayRound(playId);
-
+  // Do NOT advance the round here — the user paces progression by clicking
+  // Continue (which calls startNextRound). Otherwise the next round's 25s
+  // timer would tick down while they're reviewing the result.
   return { ok: true, points };
+}
+
+// =========================================================================
+// lockExpiredRound — if a round's timer has expired without a submission,
+// insert a zero-point placeholder guess so the round is "settled". Does
+// NOT advance current_round; the user controls progression.
+// =========================================================================
+async function lockExpiredRound(playId: string): Promise<void> {
+  const supabase = createAdminClient();
+  const { data: play } = await supabase
+    .from("geostakes_seed_plays")
+    .select("current_round, completed_at")
+    .eq("id", playId)
+    .maybeSingle();
+  if (!play || play.completed_at) return;
+  if (play.current_round > ROUND_COUNT) return;
+
+  const { data: existing } = await supabase
+    .from("geostakes_seed_play_guesses")
+    .select("play_id")
+    .eq("play_id", playId)
+    .eq("round_number", play.current_round)
+    .maybeSingle();
+  if (existing) return;
+
+  await supabase.from("geostakes_seed_play_guesses").insert({
+    play_id: playId,
+    round_number: play.current_round,
+    guess_lat: null,
+    guess_lng: null,
+    distance_meters: null,
+    points: 0,
+  });
+}
+
+// =========================================================================
+// startNextRound — user-initiated "Continue" handler. Locks the current
+// round (zero-points if no guess) and advances current_round, or
+// completes the play when the last round is finished.
+// =========================================================================
+export async function startNextRound(opts: {
+  playId: string;
+  userId: string;
+}): Promise<{ ok: true } | { error: string }> {
+  const { playId, userId } = opts;
+  const supabase = createAdminClient();
+
+  const { data: play } = await supabase
+    .from("geostakes_seed_plays")
+    .select("id, user_id, current_round, completed_at")
+    .eq("id", playId)
+    .maybeSingle();
+  if (!play) return { error: "Play not found" };
+  if (play.user_id !== userId) return { error: "Not your play" };
+  if (play.completed_at) return { error: "Play already complete" };
+  if (play.current_round > ROUND_COUNT) {
+    return { error: "Play already ended" };
+  }
+
+  await lockExpiredRound(playId);
+
+  if (play.current_round < ROUND_COUNT) {
+    await supabase
+      .from("geostakes_seed_plays")
+      .update({
+        current_round: play.current_round + 1,
+        round_started_at: new Date().toISOString(),
+      })
+      .eq("id", playId);
+  } else {
+    await completePlay(playId);
+  }
+
+  return { ok: true };
 }
 
 // =========================================================================
@@ -552,7 +630,9 @@ export async function getSeedPlayState(opts: {
     (Date.now() - new Date(pRaw.round_started_at).getTime()) / 1000 >
       ROUND_DURATION_SEC
   ) {
-    await advancePlayRound(playId);
+    // Lock the round (zero-point if no guess) but keep current_round put.
+    // The user explicitly advances via the Continue button / next-round endpoint.
+    await lockExpiredRound(playId);
   }
 
   const { data: play } = await supabase
@@ -628,10 +708,14 @@ export async function getSeedPlayState(opts: {
     yourSubmittedThisRound = Boolean(g);
   }
 
-  // Completed rounds (full truth + the player's own guess).
+  // Completed rounds (full truth + the player's own guess). When the user
+  // has submitted (or auto-zeroed) the current round but hasn't yet clicked
+  // Continue, include it here so the client can render the result screen.
   const completedMax = play.completed_at
     ? ROUND_COUNT
-    : play.current_round - 1;
+    : yourSubmittedThisRound
+      ? play.current_round
+      : play.current_round - 1;
   const completedRounds: CompletedRound[] = [];
 
   if (completedMax > 0) {
