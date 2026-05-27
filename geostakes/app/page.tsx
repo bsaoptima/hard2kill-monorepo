@@ -81,18 +81,6 @@ function StakePickerCard() {
   const [submitting, setSubmitting] = useState(false);
   const STAKES = [1, 5, 10];
 
-  // Oscillates between 8 and 20 every ~1.8s with a small random delta.
-  const [matchesRunning, setMatchesRunning] = useState(14);
-  useEffect(() => {
-    const id = setInterval(() => {
-      setMatchesRunning((n) => {
-        const delta = Math.floor(Math.random() * 5) - 2; // -2..+2
-        return Math.max(8, Math.min(20, n + delta));
-      });
-    }, 1800);
-    return () => clearInterval(id);
-  }, []);
-
   async function play() {
     setSubmitting(true);
     try {
@@ -129,7 +117,7 @@ function StakePickerCard() {
     <div className="glass-card">
       <span className="hero-eyebrow">
         <span className="pulse-dot" />
-        <span>{matchesRunning} matches running</span>
+        <span>Play Geoguessr for prizes</span>
       </span>
       <h1 className="hero-h1">
         Guess Where You Are.
@@ -198,8 +186,8 @@ function Counter({ value, prefix = "" }: { value: number; prefix?: string }) {
 
 function Hero() {
   // Static starting values for now; bump these as real data accumulates.
-  const stakes = 863;
-  const totalPlayers = 46;
+  const stakes = 180;
+  const totalPlayers = 14;
 
   return (
     <section className="hero hero-grid" id="hero">
