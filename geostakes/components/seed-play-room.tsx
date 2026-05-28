@@ -165,9 +165,9 @@ function PlayingScreen({
     <div className="absolute inset-0">
       <StreetView panoId={state.currentLocationPanoId} />
 
-      {/* HUD top-right */}
-      <div className="absolute top-4 right-4 z-10 bg-black/70 text-white rounded-sm px-4 py-3 backdrop-blur">
-        <div className="flex gap-5 items-center">
+      {/* HUD top-right — matches pot card height & value size */}
+      <div className="absolute top-4 right-4 z-10 bg-black/70 text-white rounded-sm px-5 py-4 backdrop-blur ring-1 ring-white/10">
+        <div className="flex gap-7 items-center">
           <HudSection
             label="Round"
             value={`${state.currentRound}/5`}
@@ -181,16 +181,18 @@ function PlayingScreen({
         </div>
       </div>
 
-      {/* Bet info top-left */}
-      <div className="absolute top-4 left-4 z-10 bg-black/70 text-white rounded-sm px-4 py-3 backdrop-blur">
-        <div className="text-[11px] uppercase tracking-wider text-white/60">
-          {state.role === "challenger" ? "Joining a $" : "Opening pot $"}
-          {state.betAmount}
+      {/* Pot value — big green prize on the left HUD */}
+      <div className="absolute top-4 left-4 z-10 bg-black/70 text-white rounded-sm px-5 py-4 backdrop-blur ring-1 ring-[#39ff14]/30">
+        <div className="text-[11px] uppercase tracking-[0.14em] text-white/60">
+          {state.role === "challenger" ? "Pot you're chasing" : "Pot in play"}
         </div>
-        <div className="text-sm font-semibold">
+        <div className="text-4xl font-extrabold tabular-nums text-[#39ff14] leading-none mt-1.5">
+          ${state.betAmount * 2}
+        </div>
+        <div className="text-[12px] text-white/70 mt-2">
           {state.role === "challenger"
-            ? "Beat their score"
-            : "Set the target"}
+            ? "Beat their score to win"
+            : "Set the target for the next player"}
         </div>
       </div>
 
@@ -210,11 +212,11 @@ function HudSection({
 }) {
   return (
     <div>
-      <div className="text-[10px] uppercase tracking-wider text-white/60">
+      <div className="text-[11px] uppercase tracking-[0.14em] text-white/60">
         {label}
       </div>
       <div
-        className={`text-lg font-bold tabular-nums ${
+        className={`text-4xl font-extrabold tabular-nums leading-none mt-1.5 ${
           danger ? "text-red-400" : ""
         }`}
       >
@@ -271,7 +273,7 @@ function RoundResultScreen({
   };
 
   return (
-    <div className="absolute inset-0 grid grid-rows-[1fr_300px]">
+    <div className="absolute inset-0">
       <ResultMap
         yourGuess={
           round.yourGuess
@@ -281,31 +283,50 @@ function RoundResultScreen({
         opponentGuess={null}
         truth={round.truth}
       />
-      <div className="bg-card px-8 py-12 flex flex-col items-center justify-center gap-5">
-        <div className="text-[12px] uppercase tracking-wider text-muted-foreground">
-          Round {roundNumber} result
-        </div>
-        <div className="text-5xl font-extrabold tabular-nums">
-          {round.yourGuess?.points.toLocaleString() ?? 0}
-        </div>
-        <div className="text-sm text-muted-foreground">
-          {round.yourGuess
-            ? `You were ${fmtDistance(round.yourGuess.distanceMeters)} from the target`
-            : "No guess submitted"}
-        </div>
-        {(round.yourGuess?.points ?? 0) >= 4000 ? (
-          <div className="px-4 py-2 rounded-sm bg-[#39ff14]/10 ring-1 ring-[#39ff14]/40 text-[#39ff14] text-base font-bold tracking-wider uppercase">
-            + $10 won
-          </div>
-        ) : null}
-        <button
-          type="button"
-          onClick={() => void advance()}
-          disabled={advancing}
-          className="mt-2 bg-primary text-primary-foreground border-none px-8 py-3 rounded-sm text-sm font-bold uppercase tracking-[0.1em] disabled:opacity-60"
+
+      {/* Floating glass card with the round result */}
+      <div className="absolute inset-x-0 bottom-8 z-10 flex justify-center px-4 pointer-events-none">
+        <div
+          className="pointer-events-auto relative w-full max-w-[520px] rounded-3xl border border-white/10 backdrop-blur-xl backdrop-saturate-150 px-8 py-7 flex flex-col items-center gap-4 shadow-[0_40px_100px_-20px_rgba(0,0,0,0.75)]"
+          style={{
+            background:
+              "linear-gradient(180deg, rgba(20,20,28,0.55) 0%, rgba(10,10,14,0.7) 100%)",
+          }}
         >
-          {advancing ? "…" : `${isLastRound ? "See result" : "Continue"} →`}
-        </button>
+          {/* Subtle accent glow at the top, matches the hero glass card */}
+          <div
+            className="pointer-events-none absolute inset-0 rounded-3xl"
+            style={{
+              background:
+                "radial-gradient(80% 60% at 50% 0%, rgba(57,255,20,0.12), transparent 70%)",
+            }}
+          />
+
+          <div className="relative text-[12px] uppercase tracking-[0.14em] text-white/60">
+            Round {roundNumber} result
+          </div>
+          <div className="relative text-6xl font-extrabold tabular-nums text-white leading-none">
+            {round.yourGuess?.points.toLocaleString() ?? 0}
+          </div>
+          <div className="relative text-sm text-white/70 text-center">
+            {round.yourGuess
+              ? `You were ${fmtDistance(round.yourGuess.distanceMeters)} from the target`
+              : "No guess submitted"}
+          </div>
+          {(round.yourGuess?.points ?? 0) >= 4000 ? (
+            <div className="relative px-8 py-4 rounded-md bg-[#39ff14]/10 ring-2 ring-[#39ff14]/50 text-[#39ff14] text-4xl font-extrabold tracking-wider uppercase shadow-[0_0_40px_-8px_rgba(57,255,20,0.55)]">
+              + $10 won
+            </div>
+          ) : null}
+          <button
+            type="button"
+            onClick={() => void advance()}
+            disabled={advancing}
+            className="relative mt-1 bg-primary text-primary-foreground border-none px-8 py-3 rounded-sm text-sm font-bold uppercase tracking-[0.1em] disabled:opacity-60"
+          >
+            {advancing ? "…" : `${isLastRound ? "See result" : "Continue"} →`}
+          </button>
+        </div>
       </div>
     </div>
   );
