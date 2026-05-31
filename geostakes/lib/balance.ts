@@ -85,7 +85,7 @@ export async function creditBonus(
 
   const { data: row } = await supabase
     .from("balances")
-    .select("bonus")
+    .select("bonus, balance")
     .eq("id", userId)
     .maybeSingle();
 
