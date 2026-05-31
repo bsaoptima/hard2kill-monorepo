@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { DepositSuccessToast } from "@/components/deposit-success-toast";
@@ -456,7 +456,9 @@ export default function Home() {
 
   return (
     <>
-      <DepositSuccessToast />
+      <Suspense fallback={null}>
+        <DepositSuccessToast />
+      </Suspense>
       <div className="landing-root">
         <Hero />
         <LiveGames />
