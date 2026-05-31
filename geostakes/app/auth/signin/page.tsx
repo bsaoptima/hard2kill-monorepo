@@ -26,12 +26,9 @@ export default async function SignInPage({
 
   return (
     <div className="flex flex-1 items-center justify-center px-6 py-16">
-      <div className="w-full max-w-sm flex flex-col gap-6 bg-card p-8 rounded-sm">
+      <div className="w-full max-w-sm flex flex-col gap-6 glass-card p-8">
         <div className="flex flex-col gap-1 text-center">
           <h1 className="text-[22px] font-extrabold">Login</h1>
-          <p className="text-[13px] text-muted-foreground">
-            One account works across Geostakes and Hard2Kill.
-          </p>
         </div>
 
         {error === "auth-failed" ? (
