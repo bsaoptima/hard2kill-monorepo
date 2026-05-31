@@ -19,12 +19,16 @@ export function GlobalBonusBanner() {
       if (res.ok) {
         const data = await res.json()
         setBonusEligible(data.eligible)
+      } else if (res.status === 401) {
+        // User not logged in - show banner to encourage signup
+        setBonusEligible(true)
       } else {
-        // User not logged in or error - don't show banner
+        // Other error - don't show banner
         setBonusEligible(false)
       }
     } catch (error) {
-      setBonusEligible(false)
+      // Network error - show banner anyway (better to show than hide)
+      setBonusEligible(true)
     } finally {
       setLoading(false)
     }
