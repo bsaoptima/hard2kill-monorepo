@@ -54,9 +54,14 @@ export function SignInForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-      <div className="flex flex-col gap-2">
-        <Label htmlFor="email">Email</Label>
+    <>
+      <div className="flex flex-col gap-1 text-center">
+        <h1 className="text-[22px] font-extrabold">{isLogin ? "Login" : "Sign up"}</h1>
+      </div>
+
+      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+        <div className="flex flex-col gap-2">
+          <Label htmlFor="email">Email</Label>
         <Input
           id="email"
           type="email"
@@ -102,6 +107,7 @@ export function SignInForm() {
           ? "Don't have an account? Sign up"
           : "Already have an account? Login"}
       </button>
-    </form>
+      </form>
+    </>
   );
 }
