@@ -313,11 +313,6 @@ function RoundResultScreen({
               ? `You were ${fmtDistance(round.yourGuess.distanceMeters)} from the target`
               : "No guess submitted"}
           </div>
-          {(round.yourGuess?.points ?? 0) >= 4000 ? (
-            <div className="relative px-8 py-4 rounded-md bg-[#39ff14]/10 ring-2 ring-[#39ff14]/50 text-[#39ff14] text-4xl font-extrabold tracking-wider uppercase shadow-[0_0_40px_-8px_rgba(57,255,20,0.55)]">
-              + $10 won
-            </div>
-          ) : null}
           <button
             type="button"
             onClick={() => void advance()}
