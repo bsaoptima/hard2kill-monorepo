@@ -29,6 +29,12 @@ export async function POST(request: Request) {
   const origin =
     request.headers.get("origin") ?? "http://localhost:3000";
 
+  // Capture device fingerprint and IP for bonus abuse detection
+  const deviceFingerprint = body?.deviceFingerprint || '';
+  const ipAddress = request.headers.get('x-forwarded-for')?.split(',')[0].trim()
+    || request.headers.get('x-real-ip')
+    || '';
+
   const session = await stripe.checkout.sessions.create({
     payment_method_types: ["card"],
     line_items: [
@@ -47,7 +53,11 @@ export async function POST(request: Request) {
     mode: "payment",
     success_url: `${origin}/?deposit=success`,
     cancel_url: `${origin}/?deposit=cancelled`,
-    metadata: { userId: user.id },
+    metadata: {
+      userId: user.id,
+      deviceFingerprint: deviceFingerprint,
+      ipAddress: ipAddress,
+    },
   });
 
   return NextResponse.json({ url: session.url });

@@ -1,5 +1,6 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { creditCash, deductCash, getCashBalance } from "@/lib/balance";
+import { canWithdraw } from "@/lib/bonus";
 import {
   sendWithdrawalRequestReceipt,
   sendWithdrawalAdminAlert,
@@ -118,6 +119,18 @@ export async function requestWithdrawal(opts: {
 
   const validationError = validateDestination(destination);
   if (validationError) return { error: validationError };
+
+  // Check playthrough requirement
+  const withdrawalCheck = await canWithdraw(userId);
+  if (!withdrawalCheck.allowed) {
+    const status = withdrawalCheck.playthrough_status;
+    if (status) {
+      return {
+        error: `Playthrough incomplete. Wager $${status.playthrough_remaining.toFixed(2)} more to unlock withdrawals. (Or forfeit bonus to withdraw immediately)`
+      };
+    }
+    return { error: 'Withdrawal not allowed' };
+  }
 
   const currentBalance = await getCashBalance(userId);
   if (currentBalance < amount) return { error: "Insufficient balance" };

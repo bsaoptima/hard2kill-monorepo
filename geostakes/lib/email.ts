@@ -138,6 +138,28 @@ export async function sendSeedResolveEmail(opts: {
 }
 
 /**
+ * Admin alert when a new user signs up
+ */
+export async function sendAdminNewUserAlert(opts: {
+  userEmail: string;
+  userId: string;
+}): Promise<void> {
+  const adminEmail = process.env.ADMIN_NOTIFY_EMAIL;
+  if (!adminEmail) {
+    return;
+  }
+
+  const { userEmail, userId } = opts;
+  const subject = `🎉 New user signup`;
+
+  await sendEmail({
+    to: adminEmail,
+    subject,
+    html: `<div style="font-family:monospace;color:#f4f6f8;"><b>${userEmail}</b> (${userId.slice(0, 8)})</div>`
+  });
+}
+
+/**
  * Admin alert when a creator finishes their seed — the moment it becomes
  * matchable. Used by Stefan to manually seed liquidity by jumping in as
  * the challenger.
@@ -157,7 +179,7 @@ export async function sendAdminSeedAlert(opts: {
   const { creatorEmail, creatorScore, betAmount, seedId } = opts;
   const playUrl = `${APP_URL}/?tier=${betAmount}`;
 
-  const subject = `🎯 New $${betAmount} seed open — score ${creatorScore.toLocaleString()}`;
+  const subject = `🎯 New $${betAmount} seed`;
 
   const html = `
 <!DOCTYPE html>

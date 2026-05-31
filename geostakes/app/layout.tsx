@@ -3,6 +3,7 @@ import { Inter, Anton, Space_Grotesk, JetBrains_Mono } from "next/font/google";
 import Script from "next/script";
 import "./globals.css";
 import { Header } from "@/components/header";
+import { GlobalBonusBanner } from "@/components/global-bonus-banner";
 import { Toaster } from "@/components/ui/sonner";
 
 const inter = Inter({
@@ -52,6 +53,7 @@ export default function RootLayout({
     >
       <body className="min-h-full flex flex-col bg-background text-foreground">
         <Header />
+        <GlobalBonusBanner />
         <main className="flex-1 flex flex-col">{children}</main>
         <Toaster />
         <Script

@@ -1,6 +1,7 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { calculateDistanceKm, calculateRoundScore } from "@/lib/scoring";
-import { creditCash, deductCash, recordTransaction } from "@/lib/balance";
+import { creditCash, deductCash, deductBalance, recordTransaction } from "@/lib/balance";
+import { trackPlaythroughWager } from "@/lib/bonus";
 import { resolvePanoId } from "@/lib/maps";
 import { sendSeedResolveEmail, sendAdminSeedAlert } from "@/lib/email";
 
@@ -69,8 +70,8 @@ export async function startPlay(opts: {
 
   if (matchedSeedId) {
     // Path A: join existing seed as challenger.
-    const ok = await deductCash(userId, betAmount);
-    if (!ok) return { error: "Insufficient balance" };
+    const deductResult = await deductBalance(userId, betAmount);
+    if (!deductResult.success) return { error: "Insufficient balance" };
 
     const { error: updErr } = await supabase
       .from("geostakes_seeds")
@@ -111,6 +112,16 @@ export async function startPlay(opts: {
     // Log the bet (fire-and-forget audit trail).
     void recordTransaction(userId, betAmount, "bet");
 
+    // Track playthrough for bonus (fire-and-forget, don't block on failure)
+    void trackPlaythroughWager(
+      userId,
+      betAmount,
+      deductResult.cash_deducted,
+      deductResult.bonus_deducted,
+      'seed_play',
+      play.id
+    );
+
     return { playId: play.id, seedId: matchedSeedId, role: "challenger" };
   }
 
@@ -128,8 +139,8 @@ export async function startPlay(opts: {
   const shuffled = [...pool].sort(() => Math.random() - 0.5).slice(0, ROUND_COUNT);
   const locationIds = shuffled.map((l) => l.id);
 
-  const ok = await deductCash(userId, betAmount);
-  if (!ok) return { error: "Insufficient balance" };
+  const deductResult = await deductBalance(userId, betAmount);
+  if (!deductResult.success) return { error: "Insufficient balance" };
 
   const { data: seed, error: seedErr } = await supabase
     .from("geostakes_seeds")
@@ -165,6 +176,16 @@ export async function startPlay(opts: {
 
   // Log the bet (fire-and-forget audit trail).
   void recordTransaction(userId, betAmount, "bet");
+
+  // Track playthrough for bonus (fire-and-forget, don't block on failure)
+  void trackPlaythroughWager(
+    userId,
+    betAmount,
+    deductResult.cash_deducted,
+    deductResult.bonus_deducted,
+    'seed_play',
+    play.id
+  );
 
   return { playId: play.id, seedId: seed.id, role: "creator" };
 }

@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { DepositForm } from "@/components/deposit-form";
+import { PlaythroughProgress } from "@/components/playthrough-progress";
 
 export const metadata = {
   title: "Deposit — Geostakes",
@@ -17,10 +18,12 @@ export default async function DepositPage() {
 
   const { data: balanceRow } = await supabase
     .from("balances")
-    .select("balance")
+    .select("balance, bonus")
     .eq("id", user.id)
     .maybeSingle();
-  const balance = Number(balanceRow?.balance ?? 0);
+  const cash = Number(balanceRow?.balance ?? 0);
+  const bonus = Number(balanceRow?.bonus ?? 0);
+  const balance = cash + bonus;
 
   return (
     <div className="max-w-[520px] w-full mx-auto px-6 py-16">
@@ -48,6 +51,10 @@ export default async function DepositPage() {
             </div>
           </div>
         </div>
+      </div>
+
+      <div className="mb-6">
+        <PlaythroughProgress />
       </div>
 
       <DepositForm />

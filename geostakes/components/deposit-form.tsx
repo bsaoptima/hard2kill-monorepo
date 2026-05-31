@@ -1,15 +1,41 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { toast } from "sonner";
+import { DepositMatchBanner } from "./deposit-match-banner";
+import { Gift } from "lucide-react";
 
 const QUICK_AMOUNTS = [5, 10, 20, 50, 100, 250];
 const MIN_DEPOSIT = 1;
 const MAX_DEPOSIT = 5000;
+const MAX_BONUS = 10;
+
+function calculateBonus(depositAmount: number): number {
+  if (depositAmount <= 0) return 0;
+  const bonus = depositAmount * 1.0; // 100% match
+  return Math.min(bonus, MAX_BONUS);
+}
 
 export function DepositForm() {
   const [amount, setAmount] = useState<string>("");
   const [submitting, setSubmitting] = useState(false);
+  const [bonusEligible, setBonusEligible] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    checkBonusEligibility();
+  }, []);
+
+  async function checkBonusEligibility() {
+    try {
+      const res = await fetch('/api/bonus/eligibility');
+      if (res.ok) {
+        const data = await res.json();
+        setBonusEligible(data.eligible);
+      }
+    } catch (error) {
+      console.error('Failed to check bonus eligibility:', error);
+    }
+  }
 
   const numericAmount = Number(amount);
   const isValid =
@@ -17,6 +43,9 @@ export function DepositForm() {
     numericAmount >= MIN_DEPOSIT &&
     numericAmount <= MAX_DEPOSIT;
   const canSubmit = isValid && !submitting;
+
+  const bonusAmount = bonusEligible ? calculateBonus(numericAmount) : 0;
+  const totalAmount = numericAmount + bonusAmount;
 
   async function submit() {
     if (!canSubmit) return;
@@ -43,9 +72,13 @@ export function DepositForm() {
   }
 
   return (
-    <div className="bg-card border border-border rounded-xl p-6 space-y-5">
-      {/* Amount */}
-      <div>
+    <div className="space-y-4">
+      {/* Bonus Banner */}
+      {bonusEligible && <DepositMatchBanner />}
+
+      <div className="bg-card border border-border rounded-xl p-6 space-y-5">
+        {/* Amount */}
+        <div>
         <label className="block text-[10px] uppercase tracking-[0.12em] text-muted-foreground font-mono mb-2">
           Amount (USD)
         </label>
@@ -95,6 +128,36 @@ export function DepositForm() {
         </div>
       </div>
 
+      {/* Bonus Calculator */}
+      {bonusEligible && numericAmount > 0 && (
+        <div className="rounded-lg bg-green-500/5 border border-green-500/20 p-4 space-y-2">
+          <div className="flex items-center gap-2 text-xs font-medium text-green-500 mb-3">
+            <Gift className="w-4 h-4" />
+            <span>First Deposit Bonus</span>
+          </div>
+
+          <div className="space-y-1.5 text-sm">
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Your deposit:</span>
+              <span className="font-bold tabular-nums">${numericAmount.toFixed(2)}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-green-500 font-medium">100% match bonus:</span>
+              <span className="font-bold tabular-nums text-green-500">
+                +${bonusAmount.toFixed(2)}
+              </span>
+            </div>
+            <div className="h-px bg-border my-2"></div>
+            <div className="flex justify-between text-base">
+              <span className="font-semibold">Total to play with:</span>
+              <span className="font-bold tabular-nums text-primary">
+                ${totalAmount.toFixed(2)}
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
+
       <button
         type="button"
         onClick={submit}
@@ -103,6 +166,8 @@ export function DepositForm() {
       >
         {submitting
           ? "Redirecting to Stripe…"
+          : bonusEligible && bonusAmount > 0
+          ? `Deposit $${numericAmount.toFixed(2)} → Get $${totalAmount.toFixed(2)}`
           : `Deposit $${(numericAmount || 0).toFixed(2)} via Stripe`}
       </button>
 
@@ -110,6 +175,7 @@ export function DepositForm() {
         Payments handled by Stripe. Card details never touch Geostakes
         servers. Funds appear in your balance within seconds of payment
         confirmation.
+      </div>
       </div>
     </div>
   );

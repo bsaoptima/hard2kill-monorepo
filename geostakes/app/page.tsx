@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { DepositSuccessToast } from "@/components/deposit-success-toast";
 
 
 const GRID_MATCHES = [
@@ -454,11 +455,14 @@ export default function Home() {
   // present at SSR (no flash of unstyled buttons on slow mobile devices).
 
   return (
-    <div className="landing-root">
-      <Hero />
-      <LiveGames />
-      <FAQ />
-      <Footer />
-    </div>
+    <>
+      <DepositSuccessToast />
+      <div className="landing-root">
+        <Hero />
+        <LiveGames />
+        <FAQ />
+        <Footer />
+      </div>
+    </>
   );
 }
