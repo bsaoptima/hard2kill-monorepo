@@ -21,6 +21,16 @@ interface MatchHistoryRow {
     ended_at: string;
 }
 
+interface PublicGameRow {
+    id: string;
+    amount: number;
+    currency: Currency;
+    game: string;
+    ended_at: string;
+    winner_name: string;
+    loser_name: string;
+}
+
 export function LandingScreen({ navigate }: RouteComponentProps): React.ReactElement {
     const { userId, showAuth } = useAuth();
     const [balance, setBalance] = useState<number | null>(null);
@@ -34,8 +44,14 @@ export function LandingScreen({ navigate }: RouteComponentProps): React.ReactEle
     const [status, setStatus] = useState('');
     const [showDeposit, setShowDeposit] = useState(false);
     const [matchHistory, setMatchHistory] = useState<MatchHistoryRow[]>([]);
+    const [publicGames, setPublicGames] = useState<PublicGameRow[]>([]);
     const clientRef = useRef<Client | null>(null);
     const roomRef = useRef<any>(null);
+
+    // Load public games on mount (visible to everyone)
+    useEffect(() => {
+        loadPublicGames();
+    }, []);
 
     // Load balance + match history when userId changes
     useEffect(() => {
@@ -48,6 +64,16 @@ export function LandingScreen({ navigate }: RouteComponentProps): React.ReactEle
         }
         loadUserData(userId);
     }, [userId]);
+
+    async function loadPublicGames() {
+        try {
+            const res = await fetch('/api/public-games');
+            const data = await res.json();
+            setPublicGames(data.games || []);
+        } catch (err) {
+            console.error('Failed to load public games:', err);
+        }
+    }
 
     async function loadUserData(uid: string) {
         const { data: balanceData } = await supabase
@@ -320,9 +346,35 @@ export function LandingScreen({ navigate }: RouteComponentProps): React.ReactEle
                     </div>
                 )}
 
+                {publicGames.length > 0 && (
+                    <div style={styles.historyBox}>
+                        <div style={styles.historyTitle}>Recent Games</div>
+                        {publicGames.map((g) => {
+                            const prefix = g.currency === 'coins' ? '' : '$';
+                            const suffix = g.currency === 'coins' ? ' coins' : '';
+                            return (
+                                <div key={g.id} style={styles.publicGameRow}>
+                                    <div style={styles.publicGamePlayer}>{g.winner_name}</div>
+                                    <div style={styles.publicGameVs}>vs</div>
+                                    <div style={styles.publicGamePlayer}>{g.loser_name}</div>
+                                    <div style={styles.publicGameAmount}>
+                                        {prefix}
+                                        {g.amount}
+                                        {suffix}
+                                    </div>
+                                    <div style={styles.historyGame}>{g.game}</div>
+                                    <div style={styles.historyDate}>
+                                        {new Date(g.ended_at).toLocaleString()}
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+                )}
+
                 {userId && matchHistory.length > 0 && (
                     <div style={styles.historyBox}>
-                        <div style={styles.historyTitle}>Recent Matches</div>
+                        <div style={styles.historyTitle}>Your Recent Matches</div>
                         {matchHistory.map((m) => {
                             const isWin = m.winner_id === userId;
                             const sign = isWin ? '+' : '−';
@@ -510,7 +562,7 @@ const styles: Record<string, React.CSSProperties> = {
         cursor: 'pointer',
         fontSize: 13,
     },
-    historyBox: { background: '#141414', padding: 20, borderRadius: 4 },
+    historyBox: { background: '#141414', padding: 20, borderRadius: 4, marginBottom: 24 },
     historyTitle: { fontSize: 14, fontWeight: 700, marginBottom: 12 },
     historyRow: {
         display: 'grid',
@@ -530,6 +582,30 @@ const styles: Record<string, React.CSSProperties> = {
     historyAmount: { fontVariantNumeric: 'tabular-nums', fontWeight: 700 },
     historyGame: { color: '#6a6a6a', fontSize: 11, textTransform: 'uppercase' },
     historyDate: { color: '#6a6a6a', fontSize: 11, textAlign: 'right' },
+    publicGameRow: {
+        display: 'grid',
+        gridTemplateColumns: '1fr auto 1fr 80px 60px 100px',
+        alignItems: 'center',
+        padding: '10px 0',
+        borderBottom: '1px solid #1a1a1a',
+        fontSize: 13,
+        gap: 12,
+    },
+    publicGamePlayer: {
+        fontWeight: 600,
+        color: '#ececec',
+    },
+    publicGameVs: {
+        color: '#6a6a6a',
+        fontSize: 11,
+        textTransform: 'uppercase',
+        fontWeight: 700,
+    },
+    publicGameAmount: {
+        fontVariantNumeric: 'tabular-nums',
+        fontWeight: 700,
+        color: '#39ff14',
+    },
     overlay: {
         position: 'fixed',
         inset: 0,

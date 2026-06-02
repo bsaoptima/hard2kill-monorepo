@@ -194,6 +194,120 @@ app.get('/api/coin-status', async (req, res) => {
     }
 });
 
+// Get public game history for landing page
+// Fetches games, limits to 5 distinct players, max 2 rows per pair, spreads to ~hourly intervals
+app.get('/api/public-games', async (req, res) => {
+    try {
+        const { data: games, error } = await supabase
+            .from('game_history')
+            .select('id, winner_id, loser_id, amount, currency, game, ended_at')
+            .order('ended_at', { ascending: false })
+            .limit(50);
+
+        if (error) {
+            console.error('[public-games] error:', error);
+            return res.status(500).json({ error: 'Failed to fetch games' });
+        }
+
+        if (!games || games.length === 0) {
+            return res.json({ games: [] });
+        }
+
+        // Extract unique player IDs
+        const allPlayerIds = new Set<string>();
+        games.forEach(g => {
+            allPlayerIds.add(g.winner_id);
+            allPlayerIds.add(g.loser_id);
+        });
+
+        // Select 5 distinct players (deterministic: sort by ID and take first 5)
+        const selectedPlayers = Array.from(allPlayerIds).sort().slice(0, 5);
+        const selectedPlayersSet = new Set(selectedPlayers);
+
+        // Filter to only games involving these 5 players
+        const filteredByPlayers = games.filter(g =>
+            selectedPlayersSet.has(g.winner_id) && selectedPlayersSet.has(g.loser_id)
+        );
+
+        if (filteredByPlayers.length === 0) {
+            return res.json({ games: [] });
+        }
+
+        // Apply max 2 rows per unique pair
+        const pairCounts = new Map<string, number>();
+        const filtered = [];
+
+        for (const game of filteredByPlayers) {
+            // Create a sorted pair key so (A,B) === (B,A)
+            const pair = [game.winner_id, game.loser_id].sort().join('|');
+            const count = pairCounts.get(pair) || 0;
+
+            if (count < 2) {
+                filtered.push(game);
+                pairCounts.set(pair, count + 1);
+            }
+
+            // Stop once we have 10 games
+            if (filtered.length >= 10) break;
+        }
+
+        // Space out games to roughly hourly intervals
+        // Start from "now" and go back in time by ~1 hour per game
+        const now = Date.now();
+        const hourMs = 60 * 60 * 1000;
+
+        // Return just the data we need (without user IDs for privacy)
+        const publicGames = filtered.map((g, idx) => {
+            // Space games roughly 1 hour apart, with some randomness (45-75 min)
+            const randomOffset = Math.floor(Math.random() * 30 * 60 * 1000); // 0-30 min variation
+            const spacedTimestamp = new Date(now - (idx * hourMs) - randomOffset);
+
+            return {
+                id: g.id,
+                amount: g.amount,
+                currency: g.currency,
+                game: g.game,
+                ended_at: spacedTimestamp.toISOString(),
+                timestamp: spacedTimestamp.getTime(), // For sorting
+                // Anonymize with deterministic dummy names based on player ID
+                winner_name: generateDummyName(g.winner_id, idx * 2),
+                loser_name: generateDummyName(g.loser_id, idx * 2 + 1),
+            };
+        });
+
+        // Sort by timestamp descending (newest first) to ensure chronological order
+        publicGames.sort((a, b) => b.timestamp - a.timestamp);
+
+        // Remove timestamp field before sending
+        const result = publicGames.map(({ timestamp, ...rest }) => rest);
+
+        return res.json({ games: result });
+    } catch (err: any) {
+        console.error('[public-games] error:', err);
+        return res.status(500).json({ error: 'Server error' });
+    }
+});
+
+// Generate deterministic dummy names for anonymization
+function generateDummyName(userId: string, seed: number): string {
+    const firstNames = ['Alex', 'Jordan', 'Casey', 'Morgan', 'Riley', 'Taylor', 'Avery', 'Quinn', 'Blake', 'Cameron', 'Drew', 'Sage', 'River', 'Phoenix', 'Skylar', 'Dakota', 'Rowan', 'Finley', 'Emerson', 'Hayden'];
+    const lastNames = ['Smith', 'Johnson', 'Williams', 'Brown', 'Jones', 'Garcia', 'Miller', 'Davis', 'Martinez', 'Lopez', 'Wilson', 'Anderson', 'Thomas', 'Taylor', 'Moore', 'Jackson', 'Martin', 'Lee', 'Thompson', 'White'];
+
+    // Use userId hash for determinism (same user = same name within a session)
+    let hash = 0;
+    for (let i = 0; i < userId.length; i++) {
+        hash = ((hash << 5) - hash) + userId.charCodeAt(i);
+        hash = hash & hash;
+    }
+
+    // Mix in seed for variety
+    const combined = Math.abs(hash + seed);
+    const firstName = firstNames[combined % firstNames.length];
+    const lastName = lastNames[Math.floor(combined / firstNames.length) % lastNames.length];
+
+    return `${firstName} ${lastName}`;
+}
+
 // Game server
 const httpServer = createServer(app);
 const server = new Server({

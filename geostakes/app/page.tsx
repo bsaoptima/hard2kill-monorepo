@@ -287,14 +287,39 @@ function initials(name: string) {
 }
 
 function LiveGames() {
-  // Stable initial render for SSR/hydration consistency (first 10 of pool).
-  // Re-shuffles on the client after mount so each visit shows a different set.
+  // Fetch real games from the database, limited to 5 distinct players,
+  // spaced out to roughly hourly intervals
   const [rows, setRows] = useState<RecentGame[]>(() =>
-    RECENT_POOL.slice(0, 10),
+    RECENT_POOL.slice(0, 10), // Fallback for SSR
   );
+  const [loading, setLoading] = useState(true);
+
   useEffect(() => {
-    const shuffled = [...RECENT_POOL].sort(() => Math.random() - 0.5);
-    setRows(shuffled.slice(0, 10));
+    async function fetchGames() {
+      try {
+        console.log("[LiveGames] Fetching public games...");
+        const res = await fetch("/api/public-games", { cache: "no-store" });
+        console.log("[LiveGames] Response status:", res.status);
+        if (res.ok) {
+          const data = await res.json();
+          console.log("[LiveGames] Got data:", data);
+          if (data.games && data.games.length > 0) {
+            console.log("[LiveGames] Setting", data.games.length, "games");
+            setRows(data.games);
+          } else {
+            console.log("[LiveGames] No games returned, using fallback");
+          }
+        } else {
+          console.error("[LiveGames] API returned error:", res.status);
+        }
+      } catch (err) {
+        console.error("Failed to fetch public games:", err);
+        // Keep fallback data on error
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchGames();
   }, []);
 
   return (
