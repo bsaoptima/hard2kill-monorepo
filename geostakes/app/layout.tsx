@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter, Anton, Space_Grotesk, JetBrains_Mono } from "next/font/google";
 import Script from "next/script";
 import "./globals.css";
+import { ConditionalLayout } from "@/components/conditional-layout";
 import { Header } from "@/components/header";
 import { GlobalBonusBanner } from "@/components/global-bonus-banner";
 import { Toaster } from "@/components/ui/sonner";
@@ -52,9 +53,9 @@ export default function RootLayout({
       className={`${inter.variable} ${anton.variable} ${spaceGrotesk.variable} ${jetbrains.variable} dark h-full antialiased`}
     >
       <body className="min-h-full flex flex-col bg-background text-foreground">
-        <Header />
-        <GlobalBonusBanner />
-        <main className="flex-1 flex flex-col">{children}</main>
+        <ConditionalLayout header={<Header />} banner={<GlobalBonusBanner />}>
+          <main className="flex-1 flex flex-col">{children}</main>
+        </ConditionalLayout>
         <Toaster />
         <Script
           src="https://cloud.umami.is/script.js"

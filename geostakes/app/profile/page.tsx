@@ -12,13 +12,18 @@ export default async function ProfilePage() {
     redirect("/auth/signin");
   }
 
-  // DUMMY DATA - User stats
+  // DUMMY DATA - User stats (Duels)
   const totalBalance = 847.50;
   const wins = 23;
   const losses = 7;
   const totalMatches = wins + losses;
   const winRate = ((wins / totalMatches) * 100).toFixed(1);
   const profit = 547.50;
+
+  // DUMMY DATA - Solo stats
+  const soloRoundsPlayed = 47;
+  const soloBestMultiplier = 2.0;
+  const soloProfit = 23.50;
 
   // DUMMY DATA - Match history
   const matches = [
@@ -109,6 +114,44 @@ export default async function ProfilePage() {
             >
               {profit >= 0 ? "+" : ""}${profit.toFixed(2)}
             </p>
+          </div>
+        </div>
+
+        {/* Solo Mode Stats */}
+        <div>
+          <h2 className="text-2xl font-bold mb-4" style={{ fontFamily: "var(--font-anton)" }}>
+            Solo Mode Stats
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="glass-card p-6">
+              <div className="flex items-center gap-3 mb-2">
+                <Target className="w-5 h-5 text-purple-500" />
+                <h3 className="text-sm text-muted-foreground uppercase tracking-wider">Rounds Played</h3>
+              </div>
+              <p className="text-3xl font-bold">{soloRoundsPlayed}</p>
+            </div>
+
+            <div className="glass-card p-6">
+              <div className="flex items-center gap-3 mb-2">
+                <Trophy className="w-5 h-5 text-yellow-500" />
+                <h3 className="text-sm text-muted-foreground uppercase tracking-wider">Best Multiplier</h3>
+              </div>
+              <p className="text-3xl font-bold">{soloBestMultiplier.toFixed(1)}x</p>
+            </div>
+
+            <div className="glass-card p-6">
+              <div className="flex items-center gap-3 mb-2">
+                <TrendingUp className="w-5 h-5 text-primary" />
+                <h3 className="text-sm text-muted-foreground uppercase tracking-wider">Solo Profit</h3>
+              </div>
+              <p
+                className={`text-3xl font-bold ${
+                  soloProfit >= 0 ? "text-green-500" : "text-red-500"
+                }`}
+              >
+                {soloProfit >= 0 ? "+" : ""}${soloProfit.toFixed(2)}
+              </p>
+            </div>
           </div>
         </div>
 

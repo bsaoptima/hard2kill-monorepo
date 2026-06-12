@@ -51,7 +51,7 @@ export async function Header() {
           {/* <WalletBox label="Coins" amount={String(coins)} /> */}
           <Link
             href="/profile"
-            className="bg-transparent text-foreground border border-[var(--line-2,#2a2f37)] px-5 py-2.5 rounded-xl uppercase tracking-[0.02em] hover:border-foreground hover:-translate-y-px transition-all"
+            className="bg-transparent text-foreground border border-[var(--line-2,#2a2f37)] px-5 py-2.5 uppercase tracking-[0.02em] hover:border-foreground hover:-translate-y-px transition-all"
             style={{
               fontFamily: "var(--font-anton), Anton, 'Space Grotesk', sans-serif",
               fontStyle: "italic",
@@ -63,7 +63,7 @@ export async function Header() {
           </Link>
           <Link
             href="/deposit"
-            className="relative bg-primary text-primary-foreground border-none px-5 py-2.5 rounded-xl uppercase tracking-[0.02em] hover:brightness-105 hover:-translate-y-px transition-all"
+            className="relative bg-primary text-primary-foreground border-none px-5 py-2.5 uppercase tracking-[0.02em] hover:brightness-105 hover:-translate-y-px transition-all"
             style={{
               fontFamily: "var(--font-anton), Anton, 'Space Grotesk', sans-serif",
               fontStyle: "italic",
@@ -81,7 +81,7 @@ export async function Header() {
           </Link>
           <Link
             href="/withdraw"
-            className="bg-transparent text-foreground border border-[var(--line-2,#2a2f37)] px-5 py-2.5 rounded-xl uppercase tracking-[0.02em] hover:border-foreground hover:-translate-y-px transition-all"
+            className="bg-transparent text-foreground border border-[var(--line-2,#2a2f37)] px-5 py-2.5 uppercase tracking-[0.02em] hover:border-foreground hover:-translate-y-px transition-all"
             style={{
               fontFamily: "var(--font-anton), Anton, 'Space Grotesk', sans-serif",
               fontStyle: "italic",
@@ -96,7 +96,7 @@ export async function Header() {
       ) : (
         <Link
           href="/auth/signin"
-          className="bg-primary text-primary-foreground border-none px-6 py-2.5 rounded-xl uppercase tracking-[0.02em] hover:brightness-105 hover:-translate-y-px transition-all"
+          className="bg-primary text-primary-foreground border-none px-6 py-2.5 uppercase tracking-[0.02em] hover:brightness-105 hover:-translate-y-px transition-all"
           style={{
             fontFamily: "var(--font-anton), Anton, 'Space Grotesk', sans-serif",
             fontStyle: "italic",

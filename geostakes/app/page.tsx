@@ -78,9 +78,27 @@ function HeroLiveGrid() {
 
 function StakePickerCard() {
   const router = useRouter();
-  const [stake, setStake] = useState<number>(5);
+  const [stake, setStake] = useState<number>(0.5);
+  const [customStake, setCustomStake] = useState<string>("");
   const [submitting, setSubmitting] = useState(false);
-  const STAKES = [1, 5, 10];
+  const [totalRounds, setTotalRounds] = useState<number | null>(null);
+  const STAKES = [0.5, 1];
+
+  useEffect(() => {
+    fetch("/api/stats/total-rounds")
+      .then((res) => res.json())
+      .then((data) => setTotalRounds(data.totalRounds))
+      .catch(() => setTotalRounds(0));
+  }, []);
+
+  const handleCustomChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    setCustomStake(val);
+    const num = parseFloat(val);
+    if (!isNaN(num) && num >= 0.25 && num <= 25) {
+      setStake(num);
+    }
+  };
 
   async function play() {
     setSubmitting(true);
@@ -115,38 +133,65 @@ function StakePickerCard() {
   }
 
   return (
-    <div className="glass-card">
+    <>
       <span className="hero-eyebrow">
         <span className="pulse-dot" />
-        <span>Play Geoguessr for prizes</span>
+        <span>
+          {totalRounds !== null
+            ? `${totalRounds.toLocaleString()} rounds have been played on Geostakes`
+            : "Loading..."}
+        </span>
       </span>
       <h1 className="hero-h1">
-        Guess Where You Are.
+        Guess where you are.
         <br />
-        Win Money.
+        Win money.
       </h1>
-      <div className="stake-picker">
-        {STAKES.map((s) => (
-          <button
-            key={s}
+      <p className="hero-sub">
+        Make money playing Geoguessr. The closer you guess, the more you earn.
+      </p>
+      <div className="hero-ctas">
+        <div className="stake-picker">
+          {STAKES.map((s) => (
+            <button
+              key={s}
+              className="stake-btn"
+              aria-pressed={stake === s && !customStake}
+              onClick={() => {
+                setStake(s);
+                setCustomStake("");
+              }}
+              type="button"
+            >
+              ${s.toFixed(2)}
+            </button>
+          ))}
+          <input
+            type="number"
             className="stake-btn"
-            aria-pressed={stake === s}
-            onClick={() => setStake(s)}
-            type="button"
-          >
-            <span className="lbl">Stake</span>${s}
-          </button>
-        ))}
+            placeholder="Custom"
+            value={customStake}
+            onChange={handleCustomChange}
+            min="0.25"
+            max="25"
+            step="0.25"
+            style={{
+              textAlign: "center",
+              background: customStake ? "var(--primary)" : "transparent",
+              color: customStake ? "var(--primary-foreground)" : "inherit",
+            }}
+          />
+        </div>
+        <button
+          className="btn btn-primary btn-lg"
+          onClick={() => router.push(`/play-solo?stake=${stake}`)}
+          disabled={submitting}
+          type="button"
+        >
+          {submitting ? "Starting..." : `Play · $${stake.toFixed(2)} per round →`}
+        </button>
       </div>
-      <button
-        className="play-btn"
-        onClick={play}
-        disabled={submitting}
-        type="button"
-      >
-        {submitting ? "Starting..." : `Play Now · $${stake}`}
-      </button>
-    </div>
+    </>
   );
 }
 
@@ -186,40 +231,150 @@ function Counter({ value, prefix = "" }: { value: number; prefix?: string }) {
 // ─────────────────────────────────────────────────────────────────────────────
 
 function Hero() {
-  // Static starting values for now; bump these as real data accumulates.
-  const stakes = 180;
-  const totalPlayers = 14;
+  const [stats, setStats] = useState<{
+    totalPaidOut: number;
+    totalPlayers: number;
+  } | null>(null);
+
+  useEffect(() => {
+    fetch("/api/stats/total-rounds")
+      .then((res) => res.json())
+      .then((data) =>
+        setStats({
+          totalPaidOut: data.totalPaidOut,
+          totalPlayers: data.totalPlayers,
+        })
+      )
+      .catch(() => setStats({ totalPaidOut: 0, totalPlayers: 0 }));
+  }, []);
 
   return (
-    <section className="hero hero-grid" id="hero">
-      <HeroLiveGrid />
+    <section className="hero hero-split" id="hero">
+      <div className="hero-stage" />
       <div className="hero-content">
-        <StakePickerCard />
+        <div className="hero-text">
+          <StakePickerCard />
+        </div>
+        <HeroSoloDemo />
       </div>
       <div className="hero-footstats">
         <div className="hero-footstats-inner">
           <div className="hero-stat">
             <div className="label">Paid out, all time</div>
             <div className="value mono">
-              <Counter value={stakes} prefix="$" />
+              <Counter value={stats?.totalPaidOut ?? 0} prefix="$" />
             </div>
           </div>
           <div className="hero-stat">
             <div className="label">Total players</div>
             <div className="value mono">
-              <Counter value={totalPlayers} />
+              <Counter value={stats?.totalPlayers ?? 0} />
             </div>
           </div>
           <div className="hero-stat hero-stat-pitch">
             <div className="label">How it works</div>
             <div className="pitch">
-              Skill-based 1v1 wagering.{" "}
-              <span className="accent">Closest pin takes the pot.</span>
+              Guess the location.{" "}
+              <span className="accent">Earn multipliers on accuracy.</span>
             </div>
           </div>
         </div>
       </div>
     </section>
+  );
+}
+
+function HeroSoloDemo() {
+  const [imageIndex, setImageIndex] = useState(0);
+  const [stage, setStage] = useState(0);
+  const [timer, setTimer] = useState(15);
+
+  const demos = [
+    { image: "01.jpg", location: "Shibuya Crossing, Tokyo", distance: 12, multiplier: 2.0, stake: 0.5 },
+    { image: "02.jpg", location: "Times Square, New York", distance: 3, multiplier: 3.0, stake: 1 },
+    { image: "03.jpg", location: "Dam Square, Amsterdam", distance: 89, multiplier: 1.2, stake: 0.5 },
+    { image: "04.jpg", location: "Brandenburg Gate, Berlin", distance: 145, multiplier: 0.75, stake: 1 },
+    { image: "05.jpg", location: "Champ de Mars, Paris", distance: 24, multiplier: 2.0, stake: 0.5 },
+    { image: "06.jpg", location: "Circular Quay, Sydney", distance: 67, multiplier: 1.2, stake: 1 },
+    { image: "07.jpg", location: "Copacabana, Rio de Janeiro", distance: 5, multiplier: 2.0, stake: 0.5 },
+    { image: "08.jpg", location: "Marina Bay, Singapore", distance: 210, multiplier: 0.75, stake: 1 },
+  ];
+
+  const current = demos[imageIndex];
+
+  useEffect(() => {
+    const TIMELINE = [2000, 1500, 2000];
+    if (stage >= TIMELINE.length) {
+      const t = setTimeout(() => {
+        setImageIndex((prev) => (prev + 1) % demos.length);
+        setStage(0);
+        setTimer(15);
+      }, 1000);
+      return () => clearTimeout(t);
+    }
+    const t = setTimeout(() => setStage(stage + 1), TIMELINE[stage]);
+    return () => clearTimeout(t);
+  }, [stage, imageIndex]);
+
+  useEffect(() => {
+    if (stage === 0) {
+      const interval = setInterval(() => {
+        setTimer((prev) => Math.max(0, prev - 1));
+      }, 133);
+      return () => clearInterval(interval);
+    }
+  }, [stage]);
+
+  return (
+    <div className="solo-demo-card">
+      <div className="solo-demo-head">
+        <span>SOLO MODE · {timer}s LEFT</span>
+        <span className="live">LIVE</span>
+      </div>
+
+      <div className="solo-demo-street">
+        <img
+          src={`/street-view/${current.image}`}
+          alt="Street view"
+          className="solo-demo-image"
+        />
+
+        {stage >= 1 && (
+          <div className="solo-demo-overlay">
+            <div className="solo-demo-pin" style={{ animation: "pinDrop .4s cubic-bezier(.2,1.4,.4,1) both" }}>
+              <div className="pin-location">{current.location}</div>
+              <div className="pin-marker" />
+            </div>
+          </div>
+        )}
+
+        {stage >= 2 && (
+          <div className="solo-demo-result-overlay">
+            <div className="result-box" style={{ animation: "slideUp .5s cubic-bezier(.2,1,.3,1) both" }}>
+              <div className="result-stat">
+                <div className="result-label">DISTANCE</div>
+                <div className="result-value">{current.distance}km</div>
+              </div>
+              <div className="result-stat">
+                <div className="result-label">MULTIPLIER</div>
+                <div className="result-value accent">{current.multiplier}x</div>
+              </div>
+              <div className="result-stat">
+                <div className="result-label">PAYOUT</div>
+                <div className="result-value accent">${(current.stake * current.multiplier).toFixed(2)}</div>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      <div className="solo-demo-foot">
+        <div className="solo-demo-stake">
+          <span className="label">STAKE</span>
+          <span className="amount">${current.stake.toFixed(2)}</span>
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -229,57 +384,36 @@ function Hero() {
 
 type RecentGame = {
   id: string;
-  a: string;
-  b: string;
+  player: string;
   stake: number;
-  pot: number;
+  distance: number;
+  multiplier: number;
+  payout: number;
   time: string;
-  winner: string;
 };
 
-// Big pool — randomly sampled on mount so each visitor sees a different
-// "recent" board. All stakes are $1/$5/$10 to match the actual product.
+// Solo round data - showing player, stake, distance, multiplier, and payout
 const RECENT_POOL: RecentGame[] = [
-  { id: "G-9821", a: "joao_sp", b: "vitor.rio", stake: 5, pot: 9, time: "44s ago", winner: "joao_sp" },
-  { id: "G-9820", a: "atlas", b: "noctiluca", stake: 10, pot: 18, time: "1m ago", winner: "noctiluca" },
-  { id: "G-9819", a: "MERIDIAN", b: "kp.delta", stake: 10, pot: 18, time: "2m ago", winner: "MERIDIAN" },
-  { id: "G-9818", a: "lucas_bsb", b: "marina.06", stake: 1, pot: 1.8, time: "3m ago", winner: "marina.06" },
-  { id: "G-9817", a: "tomato.png", b: "vrai", stake: 5, pot: 9, time: "4m ago", winner: "tomato.png" },
-  { id: "G-9816", a: "PARALLEL", b: "ord1nal", stake: 10, pot: 18, time: "5m ago", winner: "ord1nal" },
-  { id: "G-9815", a: "longitude", b: "zenith", stake: 10, pot: 18, time: "7m ago", winner: "longitude" },
-  { id: "G-9814", a: "ana_curitiba", b: "rafa.poa", stake: 5, pot: 9, time: "8m ago", winner: "ana_curitiba" },
-  { id: "G-9813", a: "vex.04", b: "RAY.iv", stake: 5, pot: 9, time: "9m ago", winner: "RAY.iv" },
-  { id: "G-9812", a: "kestrel", b: "phantom", stake: 1, pot: 1.8, time: "11m ago", winner: "kestrel" },
-  { id: "G-9811", a: "matheus_be", b: "carol.ssa", stake: 10, pot: 18, time: "13m ago", winner: "carol.ssa" },
-  { id: "G-9810", a: "qbit", b: "vapor.tx", stake: 1, pot: 1.8, time: "14m ago", winner: "qbit" },
-  { id: "G-9809", a: "neon.cy", b: "atlas", stake: 5, pot: 9, time: "15m ago", winner: "atlas" },
-  { id: "G-9808", a: "pedro_floripa", b: "bruno.df", stake: 10, pot: 18, time: "17m ago", winner: "pedro_floripa" },
-  { id: "G-9807", a: "SKYHWK", b: "hexa", stake: 10, pot: 18, time: "18m ago", winner: "SKYHWK" },
-  { id: "G-9806", a: "isadora.cwb", b: "thiago_rj", stake: 5, pot: 9, time: "20m ago", winner: "thiago_rj" },
-  { id: "G-9805", a: "RIVR.42", b: "SKYHWK", stake: 5, pot: 9, time: "21m ago", winner: "RIVR.42" },
-  { id: "G-9804", a: "obsidian", b: "lumen", stake: 1, pot: 1.8, time: "22m ago", winner: "lumen" },
-  { id: "G-9803", a: "felipe.gru", b: "naty_ms", stake: 10, pot: 18, time: "24m ago", winner: "felipe.gru" },
-  { id: "G-9802", a: "QUOR", b: "atlas", stake: 5, pot: 9, time: "25m ago", winner: "atlas" },
-  { id: "G-9801", a: "gabriel.bh", b: "leticia_rio", stake: 5, pot: 9, time: "27m ago", winner: "gabriel.bh" },
-  { id: "G-9800", a: "kp.delta", b: "MERIDIAN", stake: 1, pot: 1.8, time: "29m ago", winner: "kp.delta" },
-  { id: "G-9799", a: "diogo.mg", b: "camila_ce", stake: 10, pot: 18, time: "30m ago", winner: "camila_ce" },
-  { id: "G-9798", a: "noctiluca", b: "PARALLEL", stake: 10, pot: 18, time: "32m ago", winner: "PARALLEL" },
-  { id: "G-9797", a: "henrique.sjc", b: "fer_pe", stake: 5, pot: 9, time: "34m ago", winner: "henrique.sjc" },
-  { id: "G-9796", a: "ord1nal", b: "vrai", stake: 1, pot: 1.8, time: "36m ago", winner: "ord1nal" },
-  { id: "G-9795", a: "raul_natal", b: "patricia.go", stake: 10, pot: 18, time: "38m ago", winner: "patricia.go" },
-  { id: "G-9794", a: "zenith", b: "longitude", stake: 5, pot: 9, time: "41m ago", winner: "zenith" },
-  { id: "G-9793", a: "yago_palmas", b: "renata_rj", stake: 10, pot: 18, time: "44m ago", winner: "yago_palmas" },
-  { id: "G-9792", a: "hexa", b: "obsidian", stake: 5, pot: 9, time: "47m ago", winner: "hexa" },
-  { id: "G-9791", a: "caio.ssp", b: "amanda_pr", stake: 1, pot: 1.8, time: "50m ago", winner: "amanda_pr" },
-  { id: "G-9790", a: "vapor.tx", b: "qbit", stake: 10, pot: 18, time: "53m ago", winner: "vapor.tx" },
-  { id: "G-9789", a: "samuel.poa", b: "julia_ba", stake: 5, pot: 9, time: "57m ago", winner: "samuel.poa" },
-  { id: "G-9788", a: "phantom", b: "kestrel", stake: 10, pot: 18, time: "1h ago", winner: "phantom" },
-  { id: "G-9787", a: "RAY.iv", b: "vex.04", stake: 1, pot: 1.8, time: "1h ago", winner: "vex.04" },
-  { id: "G-9786", a: "rodrigo_rec", b: "stefan.sp", stake: 10, pot: 18, time: "1h ago", winner: "rodrigo_rec" },
-  { id: "G-9785", a: "lumen", b: "neon.cy", stake: 5, pot: 9, time: "1h ago", winner: "neon.cy" },
-  { id: "G-9784", a: "vinicius.rj", b: "tatiana_mg", stake: 10, pot: 18, time: "1h ago", winner: "tatiana_mg" },
-  { id: "G-9783", a: "noctiluca", b: "atlas", stake: 5, pot: 9, time: "2h ago", winner: "noctiluca" },
-  { id: "G-9782", a: "andre.sjp", b: "luiza_es", stake: 1, pot: 1.8, time: "2h ago", winner: "andre.sjp" },
+  { id: "S-9821", player: "joao_sp", stake: 0.5, distance: 12, multiplier: 2.0, payout: 1.0, time: "44s ago" },
+  { id: "S-9820", player: "atlas", stake: 1, distance: 89, multiplier: 1.2, payout: 1.2, time: "1m ago" },
+  { id: "S-9819", player: "MERIDIAN", stake: 1, distance: 3, multiplier: 3.0, payout: 3.0, time: "2m ago" },
+  { id: "S-9818", player: "lucas_bsb", stake: 0.5, distance: 450, multiplier: 0.25, payout: 0.13, time: "3m ago" },
+  { id: "S-9817", player: "tomato.png", stake: 0.5, distance: 18, multiplier: 2.0, payout: 1.0, time: "4m ago" },
+  { id: "S-9816", player: "PARALLEL", stake: 1, distance: 67, multiplier: 1.2, payout: 1.2, time: "5m ago" },
+  { id: "S-9815", player: "longitude", stake: 1, distance: 145, multiplier: 0.75, payout: 0.75, time: "7m ago" },
+  { id: "S-9814", player: "ana_curitiba", stake: 0.5, distance: 8, multiplier: 2.0, payout: 1.0, time: "8m ago" },
+  { id: "S-9813", player: "vex.04", stake: 1, distance: 290, multiplier: 0.75, payout: 0.75, time: "9m ago" },
+  { id: "S-9812", player: "kestrel", stake: 0.5, distance: 1200, multiplier: 0.0, payout: 0.0, time: "11m ago" },
+  { id: "S-9811", player: "matheus_be", stake: 1, distance: 4, multiplier: 3.0, payout: 3.0, time: "13m ago" },
+  { id: "S-9810", player: "qbit", stake: 0.5, distance: 95, multiplier: 1.2, payout: 0.6, time: "14m ago" },
+  { id: "S-9809", player: "neon.cy", stake: 1, distance: 21, multiplier: 2.0, payout: 2.0, time: "15m ago" },
+  { id: "S-9808", player: "pedro_floripa", stake: 1, distance: 340, multiplier: 0.25, payout: 0.25, time: "17m ago" },
+  { id: "S-9807", player: "SKYHWK", stake: 0.5, distance: 52, multiplier: 1.2, payout: 0.6, time: "18m ago" },
+  { id: "S-9806", player: "isadora.cwb", stake: 1, distance: 870, multiplier: 0.25, payout: 0.25, time: "20m ago" },
+  { id: "S-9805", player: "RIVR.42", stake: 0.5, distance: 14, multiplier: 2.0, payout: 1.0, time: "21m ago" },
+  { id: "S-9804", player: "obsidian", stake: 1, distance: 1400, multiplier: 0.0, payout: 0.0, time: "22m ago" },
+  { id: "S-9803", player: "felipe.gru", stake: 0.5, distance: 6, multiplier: 2.0, payout: 1.0, time: "24m ago" },
+  { id: "S-9802", player: "QUOR", stake: 1, distance: 78, multiplier: 1.2, payout: 1.2, time: "25m ago" },
 ];
 
 function initials(name: string) {
@@ -287,40 +421,26 @@ function initials(name: string) {
 }
 
 function LiveGames() {
-  // Fetch real games from the database, limited to 5 distinct players,
-  // spaced out to roughly hourly intervals
-  const [rows, setRows] = useState<RecentGame[]>(() =>
-    RECENT_POOL.slice(0, 10), // Fallback for SSR
-  );
-  const [loading, setLoading] = useState(true);
+  // Using static pool for now - will be replaced with real solo round data later
+  const rows = RECENT_POOL.slice(0, 10);
 
-  useEffect(() => {
-    async function fetchGames() {
-      try {
-        console.log("[LiveGames] Fetching public games...");
-        const res = await fetch("/api/public-games", { cache: "no-store" });
-        console.log("[LiveGames] Response status:", res.status);
-        if (res.ok) {
-          const data = await res.json();
-          console.log("[LiveGames] Got data:", data);
-          if (data.games && data.games.length > 0) {
-            console.log("[LiveGames] Setting", data.games.length, "games");
-            setRows(data.games);
-          } else {
-            console.log("[LiveGames] No games returned, using fallback");
-          }
-        } else {
-          console.error("[LiveGames] API returned error:", res.status);
-        }
-      } catch (err) {
-        console.error("Failed to fetch public games:", err);
-        // Keep fallback data on error
-      } finally {
-        setLoading(false);
-      }
-    }
-    fetchGames();
-  }, []);
+  // Disabled API fetch for now since it returns old duel format
+  // useEffect(() => {
+  //   async function fetchGames() {
+  //     try {
+  //       const res = await fetch("/api/public-games", { cache: "no-store" });
+  //       if (res.ok) {
+  //         const data = await res.json();
+  //         if (data.games && data.games.length > 0) {
+  //           setRows(data.games);
+  //         }
+  //       }
+  //     } catch (err) {
+  //       console.error("Failed to fetch public games:", err);
+  //     }
+  //   }
+  //   fetchGames();
+  // }, []);
 
   return (
     <section className="section" id="live">
@@ -328,11 +448,10 @@ function LiveGames() {
         <div className="section-head">
           <div>
             <div className="section-eyebrow">02 · The floor</div>
-            <h2 className="section-title">Latest wins</h2>
+            <h2 className="section-title">Recent rounds</h2>
           </div>
           <p className="section-sub">
-            Every match below paid out real cash. Winner takes the pot, minus
-            10% rake.
+            Every round below paid out real cash based on guess accuracy.
           </p>
         </div>
 
@@ -340,9 +459,10 @@ function LiveGames() {
           <table className="live-table tnum">
             <thead>
               <tr>
-                <th style={{ width: "40%" }}>Players</th>
+                <th style={{ width: "30%" }}>Player</th>
                 <th>Stake</th>
-                <th>Pot</th>
+                <th>Distance</th>
+                <th>Payout</th>
                 <th style={{ textAlign: "right" }}>Time</th>
               </tr>
             </thead>
@@ -351,31 +471,17 @@ function LiveGames() {
                 <tr key={g.id}>
                   <td>
                     <div className="players-cell">
-                      <span className="avatar">{initials(g.a)}</span>
-                      <span
-                        style={{
-                          color:
-                            g.winner === g.a ? "var(--accent)" : "var(--ink)",
-                        }}
-                      >
-                        {g.a}
-                      </span>
-                      <span className="vs">vs</span>
-                      <span className="avatar">{initials(g.b)}</span>
-                      <span
-                        style={{
-                          color:
-                            g.winner === g.b ? "var(--accent)" : "var(--ink)",
-                        }}
-                      >
-                        {g.b}
+                      <span className="avatar">{initials(g.player)}</span>
+                      <span style={{ color: "var(--ink)" }}>
+                        {g.player}
                       </span>
                     </div>
-                    <div className="winner-mobile">{g.winner}</div>
+                    <div className="winner-mobile">{g.player}</div>
                   </td>
-                  <td>${g.stake}</td>
-                  <td style={{ color: "var(--accent)", fontWeight: 600 }}>
-                    ${g.pot}
+                  <td>${g.stake.toFixed(2)}</td>
+                  <td>{g.distance}km</td>
+                  <td style={{ color: g.payout > g.stake ? "var(--accent)" : "var(--ink-3)", fontWeight: 600 }}>
+                    ${g.payout.toFixed(2)}
                   </td>
                   <td style={{ textAlign: "right", color: "var(--ink-2)" }}>
                     {g.time}
@@ -396,24 +502,24 @@ function LiveGames() {
 
 const FAQ_ITEMS = [
   {
-    q: "How does staking work?",
-    a: "Pick a stake from $1 to $10. Get matched with a compatible opponent — they play the same 5 locations you played. Both stakes go into escrow. Winner takes the pot, minus 10% rake.",
+    q: "How does the multiplier system work?",
+    a: "The closer you guess, the higher your multiplier. Accuracy is rewarded — great guesses can multiply your stake significantly. Each round pays out instantly based on your distance from the target.",
   },
   {
     q: "How do payouts work?",
-    a: "Winnings hit your balance instantly. Withdraw to bank, debit, or stablecoin in under a minute. Pull as much as you want, as often as you want — no holds on verified accounts.",
+    a: "Winnings hit your balance instantly after each round. Withdraw to bank, debit, or stablecoin in under a minute. Pull as much as you want, as often as you want — no holds on verified accounts.",
   },
   {
     q: "What stops people from cheating?",
-    a: "Same player can never play a seed twice. 25-second per-round timer prevents Google lookup. Score-band matching keeps superhuman scores quarantined to other cheaters. Three locks, layered.",
+    a: "You can never play the same location twice. 25-second timer prevents Google lookup. These two layers make systematic cheating nearly impossible while keeping the game fast and fun.",
   },
   {
-    q: "How does matchmaking work?",
-    a: "Async. Play your 5 rounds whenever. The next player at your stake whose skill matches yours plays the same locations. You don't have to be online at the same time.",
+    q: "How many rounds can I play?",
+    a: "As many as you want, until you've played all available locations. Each location can only be played once per account, forever. New locations are added regularly.",
   },
   {
     q: "What does it cost?",
-    a: "Nothing to sign up. On staked matches, the house takes 10% of the pot. No deposit fees. No withdrawal fees on your first $1k weekly.",
+    a: "Nothing to sign up. You only pay your stake per round. No rake, no fees. Your payout is purely based on the multiplier you earn from your guess accuracy.",
   },
 ];
 
