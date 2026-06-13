@@ -5,6 +5,7 @@ import "./globals.css";
 import { ConditionalLayout } from "@/components/conditional-layout";
 import { Header } from "@/components/header";
 import { GlobalBonusBanner } from "@/components/global-bonus-banner";
+import { DiscordFloat } from "@/components/discord-float";
 import { Toaster } from "@/components/ui/sonner";
 
 const inter = Inter({
@@ -56,6 +57,7 @@ export default function RootLayout({
         <ConditionalLayout header={<Header />} banner={<GlobalBonusBanner />}>
           <main className="flex-1 flex flex-col">{children}</main>
         </ConditionalLayout>
+        <DiscordFloat />
         <Toaster />
         <Script
           src="https://cloud.umami.is/script.js"

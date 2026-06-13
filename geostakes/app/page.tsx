@@ -290,14 +290,14 @@ function HeroSoloDemo() {
   const [timer, setTimer] = useState(15);
 
   const demos = [
-    { image: "01.jpg", location: "Shibuya Crossing, Tokyo", distance: 12, multiplier: 2.0, stake: 0.5 },
-    { image: "02.jpg", location: "Times Square, New York", distance: 3, multiplier: 3.0, stake: 1 },
-    { image: "03.jpg", location: "Dam Square, Amsterdam", distance: 89, multiplier: 1.2, stake: 0.5 },
-    { image: "04.jpg", location: "Brandenburg Gate, Berlin", distance: 145, multiplier: 0.75, stake: 1 },
-    { image: "05.jpg", location: "Champ de Mars, Paris", distance: 24, multiplier: 2.0, stake: 0.5 },
-    { image: "06.jpg", location: "Circular Quay, Sydney", distance: 67, multiplier: 1.2, stake: 1 },
-    { image: "07.jpg", location: "Copacabana, Rio de Janeiro", distance: 5, multiplier: 2.0, stake: 0.5 },
-    { image: "08.jpg", location: "Marina Bay, Singapore", distance: 210, multiplier: 0.75, stake: 1 },
+    { image: "01.jpg", location: "Shibuya Crossing, Tokyo", distance: 12, multiplier: 2.0, stake: 25 },
+    { image: "02.jpg", location: "Times Square, New York", distance: 3, multiplier: 3.0, stake: 50 },
+    { image: "03.jpg", location: "Dam Square, Amsterdam", distance: 89, multiplier: 1.2, stake: 10 },
+    { image: "04.jpg", location: "Brandenburg Gate, Berlin", distance: 145, multiplier: 0.75, stake: 25 },
+    { image: "05.jpg", location: "Champ de Mars, Paris", distance: 24, multiplier: 2.0, stake: 50 },
+    { image: "06.jpg", location: "Circular Quay, Sydney", distance: 67, multiplier: 1.2, stake: 25 },
+    { image: "07.jpg", location: "Copacabana, Rio de Janeiro", distance: 5, multiplier: 2.0, stake: 100 },
+    { image: "08.jpg", location: "Marina Bay, Singapore", distance: 210, multiplier: 0.75, stake: 50 },
   ];
 
   const current = demos[imageIndex];
