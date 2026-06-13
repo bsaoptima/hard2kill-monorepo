@@ -267,28 +267,28 @@ function PlayingScreen({
   return (
     <div className="h-screen w-full flex flex-col bg-[var(--background)] relative">
       {/* HUD */}
-      <div className="flex justify-between items-center px-6 py-4 bg-[var(--bg-card)] border-b border-[var(--line-2)] z-10">
-        <div className="flex items-center gap-3">
-          <div className="w-1 h-12 bg-primary" />
+      <div className="flex justify-between items-center px-3 sm:px-6 py-3 sm:py-4 bg-[var(--bg-card)] border-b border-[var(--line-2)] z-10">
+        <div className="flex items-center gap-2 sm:gap-3">
+          <div className="w-1 h-10 sm:h-12 bg-primary" />
           <div>
-            <div className="text-[10px] text-muted-foreground uppercase tracking-wider font-mono mb-0.5">Stake</div>
-            <div className="font-bold text-2xl tabular-nums text-primary">${stake}</div>
+            <div className="text-[9px] sm:text-[10px] text-muted-foreground uppercase tracking-wider font-mono mb-0.5">Stake</div>
+            <div className="font-bold text-lg sm:text-2xl tabular-nums text-primary">${stake}</div>
           </div>
         </div>
         <div className="text-center">
-          <div className="text-[10px] text-muted-foreground uppercase tracking-wider font-mono mb-0.5">Time</div>
+          <div className="text-[9px] sm:text-[10px] text-muted-foreground uppercase tracking-wider font-mono mb-0.5">Time</div>
           <div
-            className={`font-bold text-4xl tabular-nums ${danger ? "text-red-500 animate-pulse" : ""}`}
+            className={`font-bold text-3xl sm:text-4xl tabular-nums ${danger ? "text-red-500 animate-pulse" : ""}`}
           >
             {timeLeft}s
           </div>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3">
           <div>
-            <div className="text-[10px] text-muted-foreground uppercase tracking-wider font-mono mb-0.5 text-right">Balance</div>
-            <div className="font-bold text-2xl tabular-nums text-right">${balance?.total.toFixed(2) ?? "0.00"}</div>
+            <div className="text-[9px] sm:text-[10px] text-muted-foreground uppercase tracking-wider font-mono mb-0.5 text-right">Balance</div>
+            <div className="font-bold text-lg sm:text-2xl tabular-nums text-right">${balance?.total.toFixed(2) ?? "0.00"}</div>
           </div>
-          <div className="w-1 h-12 bg-[var(--line-2)]" />
+          <div className="w-1 h-10 sm:h-12 bg-[var(--line-2)]" />
         </div>
       </div>
 
@@ -325,9 +325,9 @@ function ResultScreen({
   const won = result.profitLoss > 0;
 
   return (
-    <div className="absolute inset-0 z-30 flex items-center justify-center" style={{ background: "rgba(5,6,8,0.78)", backdropFilter: "blur(8px)" }}>
+    <div className="absolute inset-0 z-30 flex items-center justify-center px-3 sm:px-0" style={{ background: "rgba(5,6,8,0.78)", backdropFilter: "blur(8px)" }}>
       {/* Result card */}
-      <div className="w-full max-w-[720px] mx-4 bg-[var(--bg-card)] border border-[var(--line-2)] rounded-[20px] overflow-hidden shadow-[0_40px_100px_-20px_rgba(0,0,0,0.8)]">
+      <div className="w-full max-w-[720px] mx-auto bg-[var(--bg-card)] border border-[var(--line-2)] rounded-[20px] overflow-hidden shadow-[0_40px_100px_-20px_rgba(0,0,0,0.8)]">
         {/* Result map */}
         <div className="relative w-full" style={{ aspectRatio: "2/1" }}>
           <ResultMap
@@ -338,12 +338,12 @@ function ResultScreen({
         </div>
 
         {/* Result body */}
-        <div className="flex items-center justify-between gap-5 px-6 py-5">
-          <div>
-            <div className="font-mono text-[10px] tracking-widest uppercase" style={{ color: "var(--ink-3)" }}>
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sm:gap-5 px-4 sm:px-6 py-4 sm:py-5">
+          <div className="flex-1">
+            <div className="font-mono text-[9px] sm:text-[10px] tracking-widest uppercase" style={{ color: "var(--ink-3)" }}>
               You were
             </div>
-            <div className="mt-1 tabular-nums" style={{ fontFamily: "var(--font-anton), Anton, sans-serif", fontStyle: "italic", fontSize: "40px", lineHeight: "1" }}>
+            <div className="mt-1 tabular-nums" style={{ fontFamily: "var(--font-anton), Anton, sans-serif", fontStyle: "italic", fontSize: "32px", lineHeight: "1" }} className="sm:text-[40px]">
               {result.distanceKm.toFixed(1)} km
             </div>
             <div className="mt-2 font-mono text-xs" style={{ color: "var(--ink-2)" }}>
@@ -351,8 +351,8 @@ function ResultScreen({
             </div>
           </div>
 
-          <div className="text-right">
-            <div className="font-mono text-[10px] tracking-widest uppercase" style={{ color: "var(--ink-3)" }}>
+          <div className="text-left sm:text-right self-start sm:self-auto">
+            <div className="font-mono text-[9px] sm:text-[10px] tracking-widest uppercase" style={{ color: "var(--ink-3)" }}>
               {won ? "Round won" : "Round lost"}
             </div>
             <div
@@ -360,24 +360,26 @@ function ResultScreen({
               style={{
                 fontFamily: "var(--font-anton), Anton, sans-serif",
                 fontStyle: "italic",
-                fontSize: "44px",
+                fontSize: "36px",
                 lineHeight: "1",
                 color: won ? "var(--primary)" : "var(--destructive)",
               }}
             >
-              {won ? `+$${result.payout.toFixed(2)}` : `−$${stake.toFixed(2)}`}
+              <span className="sm:text-[44px]">
+                {won ? `+$${result.payout.toFixed(2)}` : `−$${stake.toFixed(2)}`}
+              </span>
             </div>
           </div>
         </div>
 
         {/* CTA buttons */}
-        <div className="flex gap-2.5 px-6 pb-6">
+        <div className="flex gap-2.5 px-4 sm:px-6 pb-4 sm:pb-6">
           <button
             onClick={onPlayAgain}
-            className="flex-1 bg-primary text-primary-foreground border-0 px-5 py-3.5 rounded-xl font-bold uppercase tracking-wide transition-all hover:brightness-105 cursor-pointer"
-            style={{ fontFamily: "var(--font-anton), Anton, sans-serif", fontStyle: "italic", fontSize: "16px", letterSpacing: "0.03em" }}
+            className="flex-1 bg-primary text-primary-foreground border-0 px-4 sm:px-5 py-3 sm:py-3.5 rounded-xl font-bold uppercase tracking-wide transition-all hover:brightness-105 cursor-pointer"
+            style={{ fontFamily: "var(--font-anton), Anton, sans-serif", fontStyle: "italic", fontSize: "14px", letterSpacing: "0.03em" }}
           >
-            Play Again · ${stake} →
+            <span className="sm:text-[16px]">Play Again · ${stake} →</span>
           </button>
         </div>
       </div>

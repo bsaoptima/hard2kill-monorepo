@@ -6,6 +6,13 @@ import { GUESS_MAP_OPTIONS } from "@/lib/google-map-options";
 
 type LatLng = { lat: number; lng: number };
 
+// Mobile-first sizes (full width with padding on mobile)
+const COLLAPSED_SIZE_MOBILE = "calc(100vw - 24px)"; // 12px padding on each side
+const COLLAPSED_HEIGHT_MOBILE = "30vh";
+const EXPANDED_SIZE_MOBILE = "calc(100vw - 24px)";
+const EXPANDED_HEIGHT_MOBILE = "38vh";
+
+// Desktop sizes
 const COLLAPSED_SIZE = "min(24vw, 320px)";
 const COLLAPSED_HEIGHT = "min(28vh, 280px)";
 const EXPANDED_SIZE = "min(38vw, 560px)";
@@ -26,6 +33,15 @@ export function GuessMap({
   const [submitting, setSubmitting] = useState(false);
   const [hovering, setHovering] = useState(false);
   const [pinned, setPinned] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+
+  // Detect mobile viewport
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768);
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
 
   // Mirror `disabled` into a ref so the click listener (registered once
   // when the map is first created) always reads the latest value rather
@@ -107,19 +123,24 @@ export function GuessMap({
     }
   }
 
-  const containerStyle: React.CSSProperties = {
-    width: expanded ? EXPANDED_SIZE : COLLAPSED_SIZE,
-    height: expanded ? EXPANDED_HEIGHT : COLLAPSED_HEIGHT,
-  };
+  const containerStyle: React.CSSProperties = isMobile
+    ? {
+        width: expanded ? EXPANDED_SIZE_MOBILE : COLLAPSED_SIZE_MOBILE,
+        height: expanded ? EXPANDED_HEIGHT_MOBILE : COLLAPSED_HEIGHT_MOBILE,
+      }
+    : {
+        width: expanded ? EXPANDED_SIZE : COLLAPSED_SIZE,
+        height: expanded ? EXPANDED_HEIGHT : COLLAPSED_HEIGHT,
+      };
 
   return (
     <div
-      className="absolute bottom-5 right-5 z-20 transition-all duration-200 ease-out flex flex-col gap-2"
+      className="absolute bottom-3 left-3 right-3 sm:left-auto sm:right-5 sm:bottom-5 z-20 transition-all duration-200 ease-out flex flex-col gap-2"
       style={containerStyle}
       onMouseEnter={() => setHovering(true)}
       onMouseLeave={() => setHovering(false)}
     >
-      <div className="flex items-center gap-1.5 self-end bg-black/60 rounded-t-sm px-2 py-1 text-[11px]">
+      <div className="flex items-center gap-1.5 self-end bg-black/60 rounded-t-sm px-2 py-1 text-[10px] sm:text-[11px]">
         <button
           type="button"
           onClick={() => setPinned(!pinned)}
@@ -143,15 +164,15 @@ export function GuessMap({
         type="button"
         disabled={!guess || disabled || submitting}
         onClick={handleSubmit}
-        className="w-full bg-primary text-primary-foreground border-none p-3 rounded-sm text-sm font-bold uppercase tracking-[0.1em] disabled:opacity-50 disabled:cursor-not-allowed"
+        className="w-full bg-primary text-primary-foreground border-none p-3 sm:p-3 rounded-sm text-sm sm:text-sm font-bold uppercase tracking-[0.1em] disabled:opacity-50 disabled:cursor-not-allowed"
       >
         {submitting
           ? "Submitting…"
           : disabled
-            ? "Waiting for opponent…"
+            ? "Time's up"
             : guess
               ? "Submit guess"
-              : "Click the map to guess"}
+              : "Tap map to guess"}
       </button>
     </div>
   );

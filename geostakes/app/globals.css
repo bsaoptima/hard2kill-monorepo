@@ -864,12 +864,13 @@ html { color-scheme: dark; }
   }
 
   .landing-root .hero.hero-split .hero-h1 {
-    font-size: clamp(32px, 8vw, 48px);
+    font-size: clamp(36px, 9vw, 52px);
   }
 
   .landing-root .hero-ctas {
     flex-direction: column;
-    align-items: flex-start;
+    align-items: stretch;
+    width: 100%;
   }
 
   .landing-root .hero {
@@ -951,5 +952,88 @@ html { color-scheme: dark; }
 
   /* Trim to 6 rows on mobile */
   .landing-root .live-table tbody tr:nth-child(n+7) { display: none; }
+
+  /* Stake picker - full width on mobile */
+  .landing-root .stake-picker {
+    width: 100%;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  .landing-root .stake-btn {
+    min-width: 0;
+    font-size: 14px;
+    padding: 14px 12px;
+  }
+
+  /* Custom stake input spans 2 columns (full width on second row) */
+  .landing-root .stake-btn[type="number"] {
+    grid-column: span 2;
+  }
+
+  /* Solo demo card - better mobile sizing */
+  .landing-root .solo-demo-card {
+    max-width: 100%;
+  }
+
+  .landing-root .solo-demo-result-stats {
+    font-size: 13px;
+    gap: 12px;
+  }
+
+  .landing-root .solo-demo-result-payout {
+    font-size: 36px;
+  }
+
+  /* FAQ - full width on mobile */
+  .landing-root .faq-row {
+    padding: 16px 12px;
+  }
+
+  .landing-root .faq-row .q {
+    font-size: 15px;
+  }
+
+  .landing-root .faq-row .a {
+    font-size: 13px;
+  }
+
+  /* Button sizing */
+  .landing-root .btn-lg {
+    width: 100%;
+    padding: 16px 24px;
+    font-size: 14px;
+  }
+}
+
+@media (max-width: 640px) {
+  /* Extra small screens - compact everything further */
+  .landing-root .hero.hero-split .hero-h1 {
+    font-size: 40px;
+  }
+
+  .landing-root .hero-sub {
+    font-size: 14px;
+  }
+
+  /* Solo demo - very compact */
+  .landing-root .solo-demo-pin .pin-location {
+    font-size: 13px;
+    padding: 6px 10px;
+  }
+
+  .landing-root .solo-demo-result-payout {
+    font-size: 28px;
+  }
+
+  /* Sections more compact */
+  .landing-root .section {
+    padding: 32px 12px 24px;
+  }
+
+  .landing-root .section-h2 {
+    font-size: 28px;
+  }
 }
 

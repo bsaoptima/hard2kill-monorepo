@@ -4,6 +4,7 @@ import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { DepositSuccessToast } from "@/components/deposit-success-toast";
+import { DiscordFloat } from "@/components/discord-float";
 
 
 const GRID_MATCHES = [
@@ -169,7 +170,7 @@ function StakePickerCard() {
           <input
             type="number"
             className="stake-btn"
-            placeholder="Custom"
+            placeholder="Custom bet amount"
             value={customStake}
             onChange={handleCustomChange}
             min="0.25"
@@ -596,6 +597,7 @@ export default function Home() {
         <FAQ />
         <Footer />
       </div>
+      <DiscordFloat />
     </>
   );
 }
