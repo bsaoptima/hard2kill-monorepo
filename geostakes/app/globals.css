@@ -521,7 +521,7 @@ html { color-scheme: dark; }
   line-height: 1.0;
   letter-spacing: -0.02em;
   text-align: left;
-  margin: 16px 0 20px;
+  margin: 16px 0 28px;
 }
 
 .landing-root .hero.hero-split .hero-eyebrow {
@@ -865,6 +865,11 @@ html { color-scheme: dark; }
 
   .landing-root .hero.hero-split .hero-h1 {
     font-size: clamp(36px, 9vw, 52px);
+    margin-bottom: 28px;
+  }
+
+  .landing-root .hero-sub {
+    margin-top: 0;
   }
 
   .landing-root .hero-ctas {

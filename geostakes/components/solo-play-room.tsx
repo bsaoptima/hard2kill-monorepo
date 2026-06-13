@@ -343,7 +343,7 @@ function ResultScreen({
             <div className="font-mono text-[9px] sm:text-[10px] tracking-widest uppercase" style={{ color: "var(--ink-3)" }}>
               You were
             </div>
-            <div className="mt-1 tabular-nums" style={{ fontFamily: "var(--font-anton), Anton, sans-serif", fontStyle: "italic", fontSize: "32px", lineHeight: "1" }} className="sm:text-[40px]">
+            <div className="mt-1 tabular-nums text-[32px] sm:text-[40px]" style={{ fontFamily: "var(--font-anton), Anton, sans-serif", fontStyle: "italic", lineHeight: "1" }}>
               {result.distanceKm.toFixed(1)} km
             </div>
             <div className="mt-2 font-mono text-xs" style={{ color: "var(--ink-2)" }}>
