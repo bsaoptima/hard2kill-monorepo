@@ -143,19 +143,29 @@ export async function sendSeedResolveEmail(opts: {
 export async function sendAdminNewUserAlert(opts: {
   userEmail: string;
   userId: string;
+  referralCode?: string;
 }): Promise<void> {
-  const adminEmail = process.env.ADMIN_NOTIFY_EMAIL;
-  if (!adminEmail) {
-    return;
-  }
+  const adminEmail = "bogdanstefan.agrici@gmail.com";
 
-  const { userEmail, userId } = opts;
-  const subject = `🎉 New user signup`;
+  const { userEmail, userId, referralCode } = opts;
+  const subject = referralCode
+    ? `🎉 New signup via ${referralCode}`
+    : `🎉 New user signup`;
+
+  const refLine = referralCode
+    ? `<div style="margin-top:8px;padding:8px 12px;background:#1a1a2e;border-left:3px solid #7fff64;font-size:14px;">Referral: <b style="color:#7fff64;">${referralCode}</b></div>`
+    : "";
 
   await sendEmail({
     to: adminEmail,
     subject,
-    html: `<div style="font-family:monospace;color:#f4f6f8;"><b>${userEmail}</b> (${userId.slice(0, 8)})</div>`
+    html: `
+<div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#0a0a0a;padding:20px;color:#f4f6f8;">
+  <div style="font-size:16px;margin-bottom:8px;"><b>${userEmail}</b></div>
+  <div style="font-size:12px;color:#707782;font-family:monospace;">ID: ${userId.slice(0, 8)}</div>
+  ${refLine}
+</div>
+    `.trim()
   });
 }
 

@@ -26,20 +26,37 @@
 
 - **knowledge/competitors/TRIUMPH_ARCADE.md** — Deep dive on Triumph Arcade (Stanford founders, $26.2M raised, 7 employees, 902K App Store reviews at 4.7/5, ~$20M ARR via 20% rake on casual mobile skill games + B2B SDK). Verdict: serious operator in the casual-mobile skill segment but zero overlap with H2K's competitive PvP audience. Validates the model; doesn't threaten H2K's lane.
 
+## June 16, 2026
+
+### Documentation Correction
+**Focus:** Corrected FOCUS.md and CHANGELOG.md to accurately describe the solo multiplier system.
+
+**What Changed:**
+- Geostakes is a **solo multiplier game**, not 5-round PvP matches
+- Game mechanics: 25-second timer, distance-based multipliers (3.0x at 0-5km down to 0x at 1000km+), instant payouts
+- House edge is baked into multiplier EV, not a percentage rake on pots
+- Solo mode solves the cold-start problem (no need to find opponents)
+
+**Files Updated:**
+- `coworker/FOCUS.md` — Rewrote game flow, financial system, and strategy sections
+- `coworker/CHANGELOG.md` — This entry + corrected June 7 entry
+
+---
+
 ## June 7, 2026
 
 ### Strategic Pivot to Geostakes
-**Focus:** Build and validate Geostakes (GeoGuessr-style wagering) before scaling Hard2Kill.
+**Focus:** Build and validate Geostakes (GeoGuessr-style solo wagering) before scaling Hard2Kill.
 
 **Rationale:**
 - Hard2Kill required complex real-time infrastructure (Colyseus, multiplayer sync)
 - No existing player base to justify $5K marketing spend
-- Geostakes offers simpler async matching, proven game mechanic, existing GeoGuessr audience (340k+ r/geoguessr members)
+- Geostakes offers solo play with instant payouts, proven game mechanic, existing GeoGuessr audience (340k+ r/geoguessr members)
 
 **What's Built:**
 - **Core Platform:** Landing page with live match grid, stake picker ($1/$5/$10), latest wins leaderboard, FAQ, glass-card UI
-- **Game Flow:** 5-round matches, 60s countdown, server-authoritative timer, distance-based scoring, async seed-based matching with score bands
-- **Financial System:** Stripe deposits, 100% first deposit bonus (separate bonus balance), withdrawal system (bank/debit/stablecoin), 10% house rake, atomic balance operations
+- **Game Flow:** Solo rounds with 25-second timer, distance-based multipliers (3.0x to 0x), instant payouts, each location playable once per user
+- **Financial System:** Stripe deposits, 100% first deposit bonus (separate bonus balance), withdrawal system (bank/debit/stablecoin), house edge in multiplier EV, atomic balance operations
 - **User Features:** Supabase auth, profile page (win rate, P/L, match history), leaderboard (top 10), balance display (cash + bonus), bonus eligibility badge
 - **Marketing Assets:** 15 pre-built social slideshows at `/slides` for TikTok/Reels/Shorts (English + Portuguese variants)
 
@@ -60,12 +77,12 @@
 6. Strategic Reddit/streamer outreach
 
 **Key Learnings:**
-- Async matching > real-time servers (simpler, cheaper, more reliable)
+- Solo mode with multipliers > PvP matching for cold start (no chicken-and-egg problem)
 - Bonus balance system essential from day 1 (prevents abuse)
 - Social proof (leaderboard, latest wins) drives trust
 - Pre-built marketing assets enable fast iteration
 - Profile page drives retention (stat checking is addictive)
-- Score bands prevent skill mismatch frustration
+- Instant payouts keep players engaged (no waiting for opponent)
 
 **Updated Files:**
 - `coworker/FOCUS.md` — Replaced Hard2Kill 4-phase plan with Geostakes launch strategy

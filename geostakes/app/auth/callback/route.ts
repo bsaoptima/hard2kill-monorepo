@@ -1,5 +1,6 @@
 import { type EmailOtpType } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { NextResponse } from "next/server";
 import { sendAdminNewUserAlert } from "@/lib/email";
 
@@ -17,10 +18,25 @@ export async function GET(request: Request) {
       if (type === "signup") {
         const { data: { user } } = await supabase.auth.getUser();
         if (user?.email) {
+          // Extract referral code from user metadata
+          const referralCode = user.user_metadata?.referral_code;
+          const refCodeStr = typeof referralCode === "string" ? referralCode : undefined;
+
+          // Send admin alert with referral info
           void sendAdminNewUserAlert({
             userEmail: user.email,
-            userId: user.id
+            userId: user.id,
+            referralCode: refCodeStr,
           });
+
+          // Record referral in database
+          if (refCodeStr) {
+            const adminSupabase = createAdminClient();
+            await adminSupabase.from("geostakes_referrals").insert({
+              user_id: user.id,
+              referral_code: refCodeStr,
+            });
+          }
         }
       }
       return NextResponse.redirect(`${origin}${next}`);

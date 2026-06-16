@@ -1,5 +1,7 @@
 # Geostakes — Async Seed-Based Wagering Design
 
+> **⚠️ HISTORICAL** — This async seed-based matching design was superseded by a **solo multiplier system** (25s timer, distance-based multipliers, instant payouts). See `FOCUS.md` for current state.
+
 > Decided 2026-05-18. Replaces the locked-1v1-realtime spec from the MVP memo.
 
 ## What changed and why

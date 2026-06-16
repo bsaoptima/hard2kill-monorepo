@@ -1,5 +1,7 @@
 # Geostakes Build Log
 
+> **⚠️ HISTORICAL** — This doc describes the original 5-round 1v1 async matching design. The live product uses a **solo multiplier system** instead (25s timer, distance-based multipliers, instant payouts). See `FOCUS.md` for current state.
+
 > Running document of decisions, learnings, and implementation details for the Geostakes platform.
 
 ## Platform Overview

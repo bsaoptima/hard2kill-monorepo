@@ -49,18 +49,7 @@ export async function Header() {
         <div className="flex gap-2 sm:gap-3 items-center">
           <WalletBox label="Balance" amount={`$${totalBalance.toFixed(2)}`} />
           {/* <WalletBox label="Coins" amount={String(coins)} /> */}
-          <Link
-            href="/profile"
-            className="hidden md:block bg-transparent text-foreground border border-[var(--line-2,#2a2f37)] px-5 py-2.5 uppercase tracking-[0.02em] hover:border-foreground hover:-translate-y-px transition-all"
-            style={{
-              fontFamily: "var(--font-anton), Anton, 'Space Grotesk', sans-serif",
-              fontStyle: "italic",
-              fontWeight: 400,
-              fontSize: "15px",
-            }}
-          >
-            Profile
-          </Link>
+          {/* Profile link hidden until wired to real data */}
           <Link
             href="/deposit"
             className="relative bg-primary text-primary-foreground border-none px-3 sm:px-5 py-2 sm:py-2.5 uppercase tracking-[0.02em] hover:brightness-105 hover:-translate-y-px transition-all"

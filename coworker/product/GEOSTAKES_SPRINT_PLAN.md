@@ -1,5 +1,7 @@
 # Geostakes — MVP Sprint Plan
 
+> **⚠️ HISTORICAL** — This doc describes the original 5-round 1v1 PvP design. The live product uses a **solo multiplier system** instead (25s timer, distance-based multipliers, instant payouts). See `FOCUS.md` for current state.
+
 Date locked: 2026-04-27
 Estimated elapsed: ~3 weeks of focused work, broken into 6 shippable sprints.
 Each sprint ends in a demoable state (you can poke at it locally and confirm before moving on).
