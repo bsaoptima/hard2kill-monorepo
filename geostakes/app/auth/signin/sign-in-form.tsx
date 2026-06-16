@@ -42,18 +42,24 @@ export function SignInForm() {
       }
     } else {
       const trimmedRef = referralCode.trim();
-      const { error } = await supabase.auth.signUp({
+      const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
-          emailRedirectTo: `${window.location.origin}/auth/callback`,
           data: trimmedRef ? { referral_code: trimmedRef } : undefined,
         },
       });
       if (error) {
         setError(error.message);
-      } else {
-        setInfo("Check your email to confirm your account.");
+      } else if (data.user) {
+        // Record referral and notify admin
+        await fetch("/api/auth/post-signup", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ referralCode: trimmedRef || null }),
+        });
+        router.push("/");
+        router.refresh();
       }
     }
 
