@@ -33,7 +33,7 @@ export async function POST(request: Request) {
     void sendResendEvent({
       email: user.email,
       event: "user.signup",
-      data: {
+      payload: {
         referral: referralCode || "none",
       },
     });

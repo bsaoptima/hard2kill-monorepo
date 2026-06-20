@@ -13,28 +13,20 @@ const resend = RESEND_API_KEY ? new Resend(RESEND_API_KEY) : null;
 export async function sendResendEvent(opts: {
   email: string;
   event: string;
-  data?: Record<string, string | number>;
+  payload?: Record<string, unknown>;
 }): Promise<void> {
-  if (!RESEND_API_KEY) {
+  if (!resend) {
     console.warn("[email] RESEND_API_KEY not set, skipping event", opts.event);
     return;
   }
   try {
-    const res = await fetch("https://api.resend.com/broadcasts/trigger", {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${RESEND_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        event: opts.event,
-        email: opts.email,
-        data: opts.data || {},
-      }),
+    const { error } = await resend.events.send({
+      event: opts.event,
+      email: opts.email,
+      payload: opts.payload,
     });
-    if (!res.ok) {
-      const text = await res.text();
-      console.error("[email] Resend event failed", { event: opts.event, status: res.status, text });
+    if (error) {
+      console.error("[email] Resend event failed", { event: opts.event, error });
     }
   } catch (err) {
     console.error("[email] Resend event error", { event: opts.event, err });
