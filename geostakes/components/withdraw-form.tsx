@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { createClient } from "@/lib/supabase/client";
 
 type DestinationType = "pix" | "crypto_usdc_base" | "bank";
 
@@ -93,6 +94,19 @@ export function WithdrawForm({ balance }: { balance: number }) {
       }
       toast.success("Withdrawal request submitted");
       setSubmitted(true);
+
+      // Track withdrawal in Umami
+      if (typeof window !== "undefined" && window.umami) {
+        const supabase = createClient();
+        const { data: { user } } = await supabase.auth.getUser();
+        window.umami.track("withdrawal", {
+          user_id: user?.id || "",
+          email: user?.email || "",
+          amount: numericAmount,
+          destination: destinationType,
+        });
+      }
+
       router.refresh();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Network error");

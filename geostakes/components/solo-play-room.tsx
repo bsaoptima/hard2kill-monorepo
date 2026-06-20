@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
+import { createClient } from "@/lib/supabase/client";
 import { StreetViewCoords } from "@/components/match/street-view-coords";
 import { GuessMap } from "@/components/match/guess-map";
 import { ResultMap } from "@/components/match/result-map";
@@ -132,6 +133,19 @@ export function SoloPlayRoom() {
     setBalance(roundResult.balance);
     setSessionPL((prev) => prev + roundResult.profitLoss);
     setPhase("result");
+
+    // Track play in Umami
+    if (typeof window !== "undefined" && window.umami) {
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      window.umami.track("play", {
+        user_id: user?.id || "",
+        email: user?.email || "",
+        stake,
+        multiplier: roundResult.multiplier,
+        payout: roundResult.payout,
+      });
+    }
   }
 
   // Timer countdown

@@ -3,6 +3,7 @@
 import { useEffect } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { toast } from 'sonner'
+import { createClient } from '@/lib/supabase/client'
 
 export function DepositSuccessToast() {
   const searchParams = useSearchParams()
@@ -11,6 +12,19 @@ export function DepositSuccessToast() {
     const depositStatus = searchParams.get('deposit')
 
     if (depositStatus === 'success') {
+      // Track deposit in Umami with user info
+      const trackDeposit = async () => {
+        if (typeof window !== "undefined" && window.umami) {
+          const supabase = createClient()
+          const { data: { user } } = await supabase.auth.getUser()
+          window.umami.track("deposit", {
+            user_id: user?.id || "",
+            email: user?.email || "",
+          });
+        }
+      }
+      trackDeposit()
+
       // Wait a moment for the page to load
       setTimeout(() => {
         toast.success(

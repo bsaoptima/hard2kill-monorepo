@@ -50,9 +50,23 @@ export async function POST(request: Request) {
       : undefined;
 
     if (userId && amount > 0) {
+      console.log(`[Stripe] Processing deposit: $${amount.toFixed(2)} for user ${userId}`);
+
       // Credit the deposit
-      await creditCash(userId, amount);
-      await recordTransaction(userId, amount, "deposit");
+      try {
+        await creditCash(userId, amount);
+        console.log(`[Stripe] creditCash succeeded`);
+      } catch (err) {
+        console.error(`[Stripe] creditCash FAILED:`, err);
+      }
+
+      try {
+        await recordTransaction(userId, amount, "deposit");
+        console.log(`[Stripe] recordTransaction succeeded`);
+      } catch (err) {
+        console.error(`[Stripe] recordTransaction FAILED:`, err);
+      }
+
       console.log(`[Stripe] Credited $${amount.toFixed(2)} to user ${userId}`);
 
       // Try to credit first deposit bonus (wrapped in try-catch so deposit always succeeds)

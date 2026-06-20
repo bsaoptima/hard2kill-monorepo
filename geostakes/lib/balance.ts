@@ -62,16 +62,25 @@ export async function creditCash(
 ): Promise<void> {
   const supabase = createAdminClient();
 
-  const { data: row } = await supabase
+  const { data: row, error: selectError } = await supabase
     .from("balances")
     .select("balance")
     .eq("id", userId)
     .maybeSingle();
 
+  if (selectError) {
+    console.error("[creditCash] Select failed:", selectError);
+    throw selectError;
+  }
+
   const current = Number(row?.balance ?? 0);
   const next = current + amount;
 
-  await supabase.from("balances").upsert({ id: userId, balance: next });
+  const { error: upsertError } = await supabase.from("balances").upsert({ id: userId, balance: next });
+  if (upsertError) {
+    console.error("[creditCash] Upsert failed:", upsertError);
+    throw upsertError;
+  }
 }
 
 /**
@@ -200,10 +209,13 @@ export async function recordTransaction(
   metadata?: Record<string, any>
 ): Promise<void> {
   const supabase = createAdminClient();
-  await supabase.from("transactions").insert({
+  const { error } = await supabase.from("transactions").insert({
     user_id: userId,
     amount,
     type,
     metadata: metadata || null
   });
+  if (error) {
+    console.error("[recordTransaction] Failed to insert:", error);
+  }
 }

@@ -58,6 +58,16 @@ export function SignInForm() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ referralCode: trimmedRef || null }),
         });
+
+        // Track signup in Umami
+        if (typeof window !== "undefined" && window.umami) {
+          window.umami.track("signup", {
+            user_id: data.user.id,
+            email: data.user.email || "",
+            referral: trimmedRef || "none",
+          });
+        }
+
         router.push("/");
         router.refresh();
       }
