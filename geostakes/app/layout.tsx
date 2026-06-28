@@ -1,11 +1,13 @@
 import type { Metadata } from "next";
 import { Inter, Anton, Space_Grotesk, JetBrains_Mono } from "next/font/google";
+import { headers } from "next/headers";
 import Script from "next/script";
 import "./globals.css";
 import { ConditionalLayout } from "@/components/conditional-layout";
 import { Header } from "@/components/header";
 import { GlobalBonusBanner } from "@/components/global-bonus-banner";
 import { Toaster } from "@/components/ui/sonner";
+import { Web3Provider } from "@/components/web3-provider";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -40,11 +42,14 @@ export const metadata: Metadata = {
   description: "Skill-based 1v1 GeoGuessr betting.",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const headersList = await headers();
+  const cookies = headersList.get("cookie");
+
   return (
     <html
       lang="en"
@@ -53,10 +58,12 @@ export default function RootLayout({
       className={`${inter.variable} ${anton.variable} ${spaceGrotesk.variable} ${jetbrains.variable} dark h-full antialiased`}
     >
       <body className="min-h-full flex flex-col bg-background text-foreground">
-        <ConditionalLayout header={<Header />} banner={<GlobalBonusBanner />}>
-          <main className="flex-1 flex flex-col">{children}</main>
-        </ConditionalLayout>
-        <Toaster />
+        <Web3Provider cookies={cookies}>
+          <ConditionalLayout header={<Header />} banner={<GlobalBonusBanner />}>
+            <main className="flex-1 flex flex-col">{children}</main>
+          </ConditionalLayout>
+          <Toaster />
+        </Web3Provider>
         <Script
           src="https://cloud.umami.is/script.js"
           data-website-id="c1657370-4b18-4188-8719-af5eb165dc8c"

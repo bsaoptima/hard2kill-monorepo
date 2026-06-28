@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { DepositForm } from "@/components/deposit-form";
+import { DepositTabs } from "@/components/deposit-tabs";
 import { PlaythroughProgress } from "@/components/playthrough-progress";
 
 export const metadata = {
@@ -57,7 +57,7 @@ export default async function DepositPage() {
         <PlaythroughProgress />
       </div>
 
-      <DepositForm />
+      <DepositTabs />
     </div>
   );
 }
