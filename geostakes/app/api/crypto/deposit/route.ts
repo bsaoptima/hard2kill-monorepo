@@ -3,28 +3,204 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createPublicClient, http, parseAbiItem, decodeEventLog } from "viem";
 import { base } from "viem/chains";
+import { Connection, PublicKey, clusterApiUrl, LAMPORTS_PER_SOL } from "@solana/web3.js";
 import { creditCash, recordTransaction } from "@/lib/balance";
 import { creditFirstDepositBonus } from "@/lib/bonus";
 import {
-  USDC_ADDRESS,
-  USDC_DECIMALS,
-  usdcAbi,
-  formatUsdc,
+  formatStablecoin,
+  getTokenByAddress,
+  USDC_ADDRESS_SOLANA,
 } from "@/lib/contracts/usdc";
-import { PLATFORM_WALLET_ADDRESS } from "@/lib/wagmi";
+import { PLATFORM_WALLET_ADDRESS, PLATFORM_WALLET_ADDRESS_SOLANA } from "@/lib/wagmi";
 
 export const runtime = "nodejs";
 
-// Create viem client for Base
+// Fetch SOL price from CoinGecko
+async function getSolPrice(): Promise<number | null> {
+  try {
+    const res = await fetch(
+      "https://api.coingecko.com/api/v3/simple/price?ids=solana&vs_currencies=usd",
+      { next: { revalidate: 60 } } // Cache for 60 seconds
+    );
+    const data = await res.json();
+    return data.solana?.usd ?? null;
+  } catch (error) {
+    console.error("[SOL Price] Failed to fetch:", error);
+    return null;
+  }
+}
+
+// Create viem client for Base (EVM)
 const publicClient = createPublicClient({
   chain: base,
   transport: http(),
 });
 
+// Solana connection
+const solanaConnection = new Connection(
+  process.env.SOLANA_RPC_URL || clusterApiUrl("mainnet-beta")
+);
+
 // ERC-20 Transfer event signature
 const transferEventAbi = parseAbiItem(
   "event Transfer(address indexed from, address indexed to, uint256 value)"
 );
+
+// Verify Base (EVM) transaction
+async function verifyBaseTransaction(txHash: string): Promise<{
+  amount: number;
+  fromAddress: string;
+  tokenSymbol: string;
+} | null> {
+  const receipt = await publicClient.getTransactionReceipt({
+    hash: txHash as `0x${string}`,
+  });
+
+  if (!receipt || receipt.status !== "success") {
+    return null;
+  }
+
+  for (const log of receipt.logs) {
+    const token = getTokenByAddress(log.address, "evm");
+    if (!token) continue;
+
+    try {
+      const decoded = decodeEventLog({
+        abi: [transferEventAbi],
+        data: log.data,
+        topics: log.topics,
+      });
+
+      if (decoded.eventName === "Transfer") {
+        const to = (decoded.args as { to: string }).to;
+        const value = (decoded.args as { value: bigint }).value;
+        const from = (decoded.args as { from: string }).from;
+
+        if (to.toLowerCase() === PLATFORM_WALLET_ADDRESS.toLowerCase()) {
+          return {
+            amount: formatStablecoin(value, token.decimals),
+            fromAddress: from,
+            tokenSymbol: token.symbol,
+          };
+        }
+      }
+    } catch {
+      continue;
+    }
+  }
+
+  return null;
+}
+
+// Verify Solana transaction (SPL tokens and native SOL)
+async function verifySolanaTransaction(signature: string): Promise<{
+  amount: number; // USD amount
+  fromAddress: string;
+  tokenSymbol: string;
+  solAmount?: number; // Original SOL amount if native
+  solPrice?: number; // SOL price used for conversion
+} | null> {
+  try {
+    const tx = await solanaConnection.getParsedTransaction(signature, {
+      maxSupportedTransactionVersion: 0,
+    });
+
+    if (!tx || tx.meta?.err) {
+      return null;
+    }
+
+    const platformWallet = PLATFORM_WALLET_ADDRESS_SOLANA;
+    const usdcMint = USDC_ADDRESS_SOLANA;
+
+    for (const instruction of tx.transaction.message.instructions) {
+      // Check for native SOL transfer (system program)
+      if ("parsed" in instruction && instruction.program === "system") {
+        const parsed = instruction.parsed;
+
+        if (parsed.type === "transfer") {
+          const info = parsed.info;
+          const destination = info.destination;
+          const lamports = info.lamports;
+          const source = info.source;
+
+          // Check if transfer is to platform wallet
+          if (destination === platformWallet) {
+            const solAmount = lamports / LAMPORTS_PER_SOL;
+
+            // Fetch SOL price to convert to USD
+            const solPrice = await getSolPrice();
+            if (!solPrice) {
+              console.error("[Solana Verify] Could not fetch SOL price");
+              return null;
+            }
+
+            const usdAmount = solAmount * solPrice;
+
+            return {
+              amount: usdAmount,
+              fromAddress: source,
+              tokenSymbol: "SOL",
+              solAmount,
+              solPrice,
+            };
+          }
+        }
+      }
+
+      // Check for SPL token transfer
+      if ("parsed" in instruction && instruction.program === "spl-token") {
+        const parsed = instruction.parsed;
+
+        if (parsed.type === "transfer" || parsed.type === "transferChecked") {
+          const info = parsed.info;
+
+          // Get the destination account owner
+          const destAccount = info.destination;
+          const destInfo = await solanaConnection.getParsedAccountInfo(
+            new PublicKey(destAccount)
+          );
+
+          if (destInfo.value?.data && "parsed" in destInfo.value.data) {
+            const destOwner = destInfo.value.data.parsed.info.owner;
+            const mint = destInfo.value.data.parsed.info.mint;
+
+            if (destOwner === platformWallet && mint === usdcMint) {
+              // Get amount
+              let uiAmount: number;
+              if (parsed.type === "transferChecked") {
+                uiAmount = info.tokenAmount.uiAmount;
+              } else {
+                uiAmount = Number(info.amount) / 1e6; // USDC has 6 decimals
+              }
+
+              // Get source wallet
+              const sourceAccount = info.source;
+              const sourceInfo = await solanaConnection.getParsedAccountInfo(
+                new PublicKey(sourceAccount)
+              );
+
+              let fromAddress = sourceAccount;
+              if (sourceInfo.value?.data && "parsed" in sourceInfo.value.data) {
+                fromAddress = sourceInfo.value.data.parsed.info.owner;
+              }
+
+              return {
+                amount: uiAmount,
+                fromAddress,
+                tokenSymbol: "USDC",
+              };
+            }
+          }
+        }
+      }
+    }
+
+    return null;
+  } catch (error) {
+    console.error("[Solana Verify] Error:", error);
+    return null;
+  }
+}
 
 export async function POST(request: Request) {
   // Authenticate user
@@ -40,11 +216,13 @@ export async function POST(request: Request) {
   // Parse request body
   let txHash: string;
   let expectedAmount: number;
+  let chain: "base" | "solana" = "base";
 
   try {
     const body = await request.json();
     txHash = body.txHash;
     expectedAmount = body.expectedAmount;
+    chain = body.chain || "base";
 
     if (!txHash || typeof txHash !== "string") {
       return NextResponse.json(
@@ -53,12 +231,22 @@ export async function POST(request: Request) {
       );
     }
 
-    // Validate tx hash format
-    if (!/^0x[a-fA-F0-9]{64}$/.test(txHash)) {
-      return NextResponse.json(
-        { error: "Invalid transaction hash format" },
-        { status: 400 }
-      );
+    // Validate tx hash format based on chain
+    if (chain === "base") {
+      if (!/^0x[a-fA-F0-9]{64}$/.test(txHash)) {
+        return NextResponse.json(
+          { error: "Invalid transaction hash format" },
+          { status: 400 }
+        );
+      }
+    } else if (chain === "solana") {
+      // Solana signatures are base58, typically 87-88 characters
+      if (!/^[1-9A-HJ-NP-Za-km-z]{87,88}$/.test(txHash)) {
+        return NextResponse.json(
+          { error: "Invalid Solana signature format" },
+          { status: 400 }
+        );
+      }
     }
   } catch {
     return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
@@ -80,79 +268,37 @@ export async function POST(request: Request) {
   }
 
   try {
-    // Fetch transaction receipt from blockchain
-    const receipt = await publicClient.getTransactionReceipt({
-      hash: txHash as `0x${string}`,
-    });
+    // Verify transaction based on chain
+    let verifyResult: {
+      amount: number;
+      fromAddress: string;
+      tokenSymbol: string;
+      solAmount?: number;
+      solPrice?: number;
+    } | null;
 
-    if (!receipt) {
-      return NextResponse.json(
-        { error: "Transaction not found" },
-        { status: 404 }
-      );
+    if (chain === "solana") {
+      verifyResult = await verifySolanaTransaction(txHash);
+    } else {
+      verifyResult = await verifyBaseTransaction(txHash);
     }
 
-    // Check transaction was successful
-    if (receipt.status !== "success") {
+    if (!verifyResult) {
       return NextResponse.json(
-        { error: "Transaction failed on-chain" },
+        { error: "No supported transfer to platform wallet found in transaction" },
         { status: 400 }
       );
     }
 
-    // Find USDC Transfer event to platform wallet
-    let transferAmount: bigint | null = null;
-    let fromAddress: string | null = null;
+    const { amount: usdAmount, fromAddress, tokenSymbol, solAmount, solPrice } = verifyResult;
 
-    for (const log of receipt.logs) {
-      // Check if this log is from USDC contract
-      if (log.address.toLowerCase() !== USDC_ADDRESS.toLowerCase()) {
-        continue;
-      }
-
-      try {
-        const decoded = decodeEventLog({
-          abi: [transferEventAbi],
-          data: log.data,
-          topics: log.topics,
-        });
-
-        if (decoded.eventName === "Transfer") {
-          const to = (decoded.args as { to: string }).to;
-          const value = (decoded.args as { value: bigint }).value;
-          const from = (decoded.args as { from: string }).from;
-
-          // Check if transfer is to platform wallet
-          if (to.toLowerCase() === PLATFORM_WALLET_ADDRESS.toLowerCase()) {
-            transferAmount = value;
-            fromAddress = from;
-            break;
-          }
-        }
-      } catch {
-        // Not a Transfer event, skip
-        continue;
-      }
-    }
-
-    if (!transferAmount || !fromAddress) {
-      return NextResponse.json(
-        { error: "No USDC transfer to platform wallet found in transaction" },
-        { status: 400 }
-      );
-    }
-
-    // Convert to USD amount
-    const usdAmount = formatUsdc(transferAmount);
-
-    // Validate amount is reasonable (within 1% of expected, or if no expected amount provided)
+    // Validate amount is reasonable (within 1% of expected)
     if (expectedAmount) {
-      const tolerance = expectedAmount * 0.01; // 1% tolerance
+      const tolerance = expectedAmount * 0.01;
       if (Math.abs(usdAmount - expectedAmount) > tolerance) {
         console.warn(
           `[Crypto Deposit] Amount mismatch: expected ${expectedAmount}, got ${usdAmount}`
         );
-        // Still process but log the discrepancy
       }
     }
 
@@ -165,7 +311,7 @@ export async function POST(request: Request) {
     }
 
     console.log(
-      `[Crypto Deposit] Processing: $${usdAmount.toFixed(2)} from ${fromAddress} for user ${user.id}`
+      `[Crypto Deposit] Processing: $${usdAmount.toFixed(2)} ${tokenSymbol}${solAmount ? ` (${solAmount.toFixed(4)} SOL @ $${solPrice?.toFixed(2)})` : ""} on ${chain} from ${fromAddress} for user ${user.id}`
     );
 
     // Credit the user's balance
@@ -177,8 +323,10 @@ export async function POST(request: Request) {
       type: "crypto",
       tx_hash: txHash,
       from_address: fromAddress,
-      chain: "base",
-      token: "USDC",
+      chain,
+      token: tokenSymbol,
+      ...(solAmount && { sol_amount: solAmount }),
+      ...(solPrice && { sol_price: solPrice }),
     });
     console.log(`[Crypto Deposit] recordTransaction succeeded`);
 
@@ -187,9 +335,9 @@ export async function POST(request: Request) {
       const bonusResult = await creditFirstDepositBonus(
         user.id,
         usdAmount,
-        undefined, // device fingerprint (not available for crypto)
-        undefined, // IP address
-        `crypto:${txHash}` // Use tx hash as payment method ID for uniqueness
+        undefined,
+        undefined,
+        `crypto:${txHash}`
       );
 
       if (bonusResult.success) {
@@ -221,7 +369,6 @@ export async function POST(request: Request) {
   } catch (error) {
     console.error("[Crypto Deposit] Error:", error);
 
-    // Handle specific viem errors
     if (error instanceof Error) {
       if (error.message.includes("could not be found")) {
         return NextResponse.json(

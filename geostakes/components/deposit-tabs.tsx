@@ -23,7 +23,7 @@ export function DepositTabs() {
           }`}
         >
           <Wallet className="w-4 h-4" />
-          Crypto (USDC)
+          Crypto
         </button>
         <button
           onClick={() => setMethod("card")}
