@@ -65,6 +65,7 @@ export function CryptoDepositForm() {
   const [solanaTxHash, setSolanaTxHash] = useState<string | null>(null);
   const [solanaTxStatus, setSolanaTxStatus] = useState<"idle" | "signing" | "confirming" | "confirmed" | "error">("idle");
   const [solPrice, setSolPrice] = useState<number | null>(null);
+  const [allBalances, setAllBalances] = useState<Record<string, number>>({});
 
   const { open } = useAppKit();
   const { address, isConnected } = useAppKitAccount();
@@ -115,7 +116,7 @@ export function CryptoDepositForm() {
     return () => clearInterval(interval);
   }, []);
 
-  // Solana: Fetch token/SOL balance
+  // Solana: Fetch token/SOL balance for selected token
   useEffect(() => {
     if (!isSolana || !address) {
       setSolanaBalance(null);
@@ -145,6 +146,49 @@ export function CryptoDepositForm() {
 
     fetchSolanaBalance();
   }, [isSolana, address, token.address, token.isNative]);
+
+  // Fetch ALL token balances for the connected wallet
+  useEffect(() => {
+    if (!address || !isConnected) {
+      setAllBalances({});
+      return;
+    }
+
+    async function fetchAllBalances() {
+      const balances: Record<string, number> = {};
+
+      if (isSolana) {
+        // Fetch all Solana balances
+        try {
+          const walletPubkey = new PublicKey(address!);
+
+          // SOL balance
+          const solBalance = await solanaConnection.getBalance(walletPubkey);
+          balances["SOL"] = solBalance / LAMPORTS_PER_SOL;
+
+          // USDC balance
+          try {
+            const usdcMint = new PublicKey(SUPPORTED_TOKENS_SOLANA.USDC.address);
+            const usdcAta = await getAssociatedTokenAddress(usdcMint, walletPubkey);
+            const usdcBalance = await solanaConnection.getTokenAccountBalance(usdcAta);
+            balances["USDC"] = Number(usdcBalance.value.uiAmount) || 0;
+          } catch {
+            balances["USDC"] = 0;
+          }
+        } catch (error) {
+          console.error("Failed to fetch Solana balances:", error);
+        }
+      } else {
+        // Fetch all Base (EVM) balances
+        // For EVM, we only support USDC currently, and the balance is fetched via useReadContract
+        // We'll get it from evmTokenBalance when available
+      }
+
+      setAllBalances(balances);
+    }
+
+    fetchAllBalances();
+  }, [address, isConnected, isSolana]);
 
   // EVM: Write contract for transfer
   const {
@@ -411,32 +455,19 @@ export function CryptoDepositForm() {
 
       <div className="bg-card border border-border rounded-xl p-6 space-y-5">
         {/* Connected Wallet Info */}
-        <div className="flex items-center justify-between p-3 bg-background rounded-lg border border-border">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-              <Wallet className="w-4 h-4 text-primary" />
-            </div>
-            <div>
-              <div className="text-xs text-muted-foreground">
-                Connected on {isSolana ? "Solana" : "Base"}
+        <div className="p-3 bg-background rounded-lg border border-border space-y-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+                <Wallet className="w-4 h-4 text-primary" />
               </div>
-              <div className="font-mono text-sm">
-                {address?.slice(0, 6)}...{address?.slice(-4)}
-              </div>
-            </div>
-          </div>
-          <div className="flex items-center gap-3">
-            <div className="text-right">
-              <div className="text-xs text-muted-foreground">{token.symbol} Balance</div>
-              <div className="font-bold tabular-nums">
-                {isNativeToken ? (
-                  <>
-                    {walletBalance.toFixed(4)} SOL
-                    {solPrice && <span className="text-muted-foreground text-xs ml-1">(~${(walletBalance * solPrice).toFixed(2)})</span>}
-                  </>
-                ) : (
-                  `$${walletBalance.toFixed(2)}`
-                )}
+              <div>
+                <div className="text-xs text-muted-foreground">
+                  Connected on {isSolana ? "Solana" : "Base"}
+                </div>
+                <div className="font-mono text-sm">
+                  {address?.slice(0, 6)}...{address?.slice(-4)}
+                </div>
               </div>
             </div>
             <button
@@ -445,6 +476,41 @@ export function CryptoDepositForm() {
             >
               Disconnect
             </button>
+          </div>
+
+          {/* Wallet Balances */}
+          <div className="pt-2 border-t border-border">
+            <div className="text-xs text-muted-foreground mb-2">Wallet Balances</div>
+            <div className="flex flex-wrap gap-3">
+              {isSolana ? (
+                <>
+                  <div className="flex items-center gap-2 bg-card px-3 py-1.5 rounded-lg border border-border">
+                    <span className="text-sm font-medium">SOL</span>
+                    <span className="font-bold tabular-nums">
+                      {(allBalances["SOL"] ?? 0).toFixed(4)}
+                    </span>
+                    {solPrice && (
+                      <span className="text-xs text-muted-foreground">
+                        (~${((allBalances["SOL"] ?? 0) * solPrice).toFixed(2)})
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2 bg-card px-3 py-1.5 rounded-lg border border-border">
+                    <span className="text-sm font-medium">USDC</span>
+                    <span className="font-bold tabular-nums">
+                      ${(allBalances["USDC"] ?? 0).toFixed(2)}
+                    </span>
+                  </div>
+                </>
+              ) : (
+                <div className="flex items-center gap-2 bg-card px-3 py-1.5 rounded-lg border border-border">
+                  <span className="text-sm font-medium">USDC</span>
+                  <span className="font-bold tabular-nums">
+                    ${walletBalance.toFixed(2)}
+                  </span>
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
