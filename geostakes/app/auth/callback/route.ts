@@ -8,10 +8,31 @@ export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
   const token_hash = searchParams.get("token_hash");
   const type = searchParams.get("type") as EmailOtpType | null;
+  const code = searchParams.get("code");
   const next = searchParams.get("next") ?? "/";
 
+  const supabase = await createClient();
+
+  // Handle OAuth callback (Google, etc.)
+  if (code) {
+    const { error } = await supabase.auth.exchangeCodeForSession(code);
+    if (!error) {
+      // Check if this is a new user and send notifications
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user?.email) {
+        // Send admin notification for OAuth signups
+        void sendAdminNewUserAlert({
+          userEmail: user.email,
+          userId: user.id,
+          referralCode: undefined,
+        });
+      }
+      return NextResponse.redirect(`${origin}${next}`);
+    }
+  }
+
+  // Handle email OTP verification
   if (token_hash && type) {
-    const supabase = await createClient();
     const { error } = await supabase.auth.verifyOtp({ token_hash, type });
     if (!error) {
       // Send admin notification for new signups

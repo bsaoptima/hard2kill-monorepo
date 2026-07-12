@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet data-dc-atomics><meta name="viewport" content="width=device-width, initial-scale=1"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Saira+Condensed:ital,wght@0,700;0,800;0,900;1,800;1,900&family=Space+Grotesk:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet"><style>
+:root{--bg:#08090a;--surf:#111114;--surf2:#191a1f;--line:#26272e;--acc:#39ff6a;--accd:#1c7a3a;--gold:#ffc24d;--red:#ff6b6b;--txt:#f4f5f2;--dim:#8b8c95;--mono:'Space Mono',monospace;--disp:'Saira Condensed',sans-serif;--ui:'Space Grotesk',system-ui,sans-serif}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--txt);font-family:var(--ui);-webkit-font-smoothing:antialiased}
+.app{position:relative;min-height:100vh;display:flex;flex-direction:column}
+.app::before{content:"";position:fixed;inset:0;background-image:radial-gradient(rgba(255,255,255,.035) 1px,transparent 1px);background-size:22px 22px;pointer-events:none;z-index:0}
+a{color:var(--acc);text-decoration:none}a:hover{color:var(--txt)}
+.lbl{font-family:var(--mono);font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--dim)}
+.mono{font-family:var(--mono)}.dim{color:var(--dim)}
+.hd{position:relative;z-index:2;height:76px;display:flex;align-items:center;justify-content:center;border-bottom:1px solid var(--line)}
+.logo{font-family:var(--disp);font-style:italic;font-weight:900;font-size:28px;color:var(--txt)}
+.logo b{color:var(--acc)}
+.stage{flex:1;position:relative;z-index:1;display:grid;grid-template-columns:1fr 1fr;max-width:1080px;width:100%;margin:0 auto}
+/* left = form */
+.formside{display:flex;align-items:center;justify-content:center;padding:52px 40px}
+.card{width:100%;max-width:400px}
+.h1{font-family:var(--disp);font-style:italic;font-weight:900;font-size:clamp(38px,4.6vw,52px);line-height:.92;letter-spacing:-.015em;text-transform:uppercase;margin:0}
+.hsub{font-size:15px;color:var(--dim);margin:10px 0 26px;line-height:1.5}
+.hsub b{color:var(--acc)}
+/* oauth */
+.oauth{display:flex;flex-direction:column;gap:10px}
+.obtn{display:flex;align-items:center;justify-content:center;gap:11px;height:52px;font-family:var(--ui);font-weight:700;font-size:15px;border:1px solid var(--line);background:var(--surf2);color:var(--txt);cursor:pointer;box-shadow:0 4px 0 #000;transition:transform .08s,border-color .12s}
+.obtn:hover{border-color:var(--dim)}
+.obtn:active{transform:translateY(3px);box-shadow:0 1px 0 #000}
+.obtn.wallet{background:var(--acc);color:#06180d;border-color:var(--acc);box-shadow:0 4px 0 var(--accd);position:relative}
+.obtn.wallet:active{box-shadow:0 1px 0 var(--accd)}
+.soon{position:absolute;right:12px;top:50%;transform:translateY(-50%);font-family:var(--mono);font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:#06180d;background:rgba(6,24,13,.16);border:1px solid rgba(6,24,13,.3);padding:3px 7px}
+.gG{font-weight:800;font-size:17px}
+.solmark{width:19px;height:16px}
+.ordiv{display:flex;align-items:center;gap:14px;margin:20px 0}
+.ordiv em{height:1px;flex:1;background:var(--line);font-style:normal}
+.ordiv span{font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--dim)}
+/* fields */
+.field{margin-bottom:14px}
+.field label{display:block;font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);margin-bottom:7px}
+.inpwrap{position:relative;display:flex;align-items:center}
+.inp{width:100%;background:var(--surf2);border:1px solid var(--line);color:var(--txt);font-family:var(--ui);font-size:15px;padding:14px 16px}
+.inp:focus{outline:none;border-color:var(--acc)}
+.inp::placeholder{color:var(--dim)}
+.peek{position:absolute;right:14px;font-family:var(--mono);font-size:11px;color:var(--dim);cursor:pointer;letter-spacing:.06em}
+.peek:hover{color:var(--txt)}
+.rowmeta{display:flex;align-items:center;justify-content:space-between;margin:2px 0 20px}
+.remember{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--dim);cursor:pointer;user-select:none}
+.box{width:17px;height:17px;border:1px solid var(--line);background:var(--surf2);display:flex;align-items:center;justify-content:center;font-size:11px;color:#06180d}
+.box.on{background:var(--acc);border-color:var(--acc)}
+.forgot{font-size:13px;font-weight:600}
+.submit{width:100%;font-family:var(--disp);font-style:italic;font-weight:900;font-size:22px;text-transform:uppercase;padding:18px;background:var(--acc);color:#06180d;border:none;cursor:pointer;box-shadow:0 6px 0 var(--accd);transition:transform .08s,filter .12s}
+.submit:hover{filter:brightness(1.08)}
+.submit:active{transform:translateY(4px);box-shadow:0 2px 0 var(--accd)}
+.toggle{text-align:center;font-size:14px;color:var(--dim);margin-top:22px}
+.toggle a{font-weight:700;cursor:pointer}
+.legal{font-family:var(--mono);font-size:10px;color:var(--dim);text-align:center;margin-top:18px;line-height:1.7;letter-spacing:.02em}
+.age{display:inline-flex;align-items:center;gap:6px;font-family:var(--mono);font-size:10px;letter-spacing:.08em;color:var(--dim);border:1px solid var(--line);padding:6px 11px;margin-top:16px}
+/* right = value panel */
+.valside{position:relative;border-left:1px solid var(--line);background:#0b0c0f;padding:52px 44px;display:flex;flex-direction:column;justify-content:center;overflow:hidden}
+.vinner{position:relative;z-index:1}
+.bonuscard{background:linear-gradient(135deg,rgba(57,255,106,.12),rgba(255,194,77,.07));border:1px solid color-mix(in srgb,var(--acc) 35%,var(--line));padding:22px 24px}
+.bctag{display:flex;align-items:center;gap:9px;font-family:var(--disp);font-style:italic;font-weight:800;font-size:16px;text-transform:uppercase}
+.bcbig{font-family:var(--disp);font-style:italic;font-weight:900;font-size:clamp(40px,5vw,58px);line-height:.9;text-transform:uppercase;margin:12px 0 6px}
+.bcbig b{color:var(--acc);text-shadow:0 0 30px color-mix(in srgb,var(--acc) 50%,transparent)}
+.bcsub{font-size:14px;color:var(--dim);line-height:1.5}
+.vfeat{display:flex;flex-direction:column;gap:14px;margin:30px 0}
+.vf{display:flex;align-items:center;gap:13px;font-size:15px;color:#d4d5da}
+.vf .vk{width:30px;height:30px;flex:none;display:flex;align-items:center;justify-content:center;font-size:15px;background:var(--surf);border:1px solid var(--line)}
+.vf b{color:var(--txt);font-weight:600}
+.proof{border-top:1px solid var(--line);padding-top:22px;display:flex;align-items:center;gap:14px}
+.avstack{display:flex}
+.avstack span{width:34px;height:34px;flex:none;border-radius:50%;border:2px solid #0a0b0c;margin-left:-10px;display:flex;align-items:center;justify-content:center;font-family:var(--disp);font-style:italic;font-weight:900;font-size:13px;color:#06180d}
+.avstack span:first-child{margin-left:0}
+.prooftxt{font-size:13px;color:var(--dim);line-height:1.5}
+.prooftxt b{color:var(--txt);font-family:var(--disp);font-style:italic;font-weight:900;font-size:16px}
+@media(max-width:820px){.stage{grid-template-columns:1fr}.valside{display:none}.formside{padding:40px 28px 60px}}
+</style></helmet><div class="app"><header class="hd"><a href="Geostakes Landing.dc.html" class="logo">GEO<b>STAKES</b></a></header><div class="stage"><div class="formside"><div class="card"><h1 class="h1">{{ title }}</h1><p class="hsub">{{ subtitle }}</p><div class="oauth"><button class="obtn wallet" onClick="{{ noop }}"><svg class="solmark" viewBox="0 0 24 20"><linearGradient id="sgm" x1="0" y1="20" x2="24" y2="0" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#06180d"></stop><stop offset="1" stop-color="#06180d"></stop></linearGradient><path fill="#06180d" d="M4 0h20l-4 5H0zM0 7.5h20l4 5H4zM4 15h20l-4 5H0z"></path></svg>Continue with wallet<span class="soon">Soon</span></button><button class="obtn" onClick="{{ noop }}"><span class="gG" style="color:#4285F4">G</span>Continue with Google</button></div><div class="ordiv"><em></em><span>or with email</span><em></em></div><sc-if value="{{ isSignup }}" hint-placeholder-val="{{ true }}"><div class="field"><label>Username</label><div class="inpwrap"><input class="inp" placeholder="Pick a handle"></div></div></sc-if><div class="field"><label>Email</label><div class="inpwrap"><input class="inp" type="email" placeholder="you@email.com"></div></div><div class="field"><label>Password</label><div class="inpwrap"><input class="inp" type="{{ pwType }}" placeholder="{{ pwPlaceholder }}"><span class="peek" onClick="{{ togglePw }}">{{ peekLabel }}</span></div></div><div class="rowmeta"><span class="remember" onClick="{{ toggleRemember }}"><span class="box {{ rememberCls }}">{{ rememberMark }}</span>{{ metaLeft }}</span><sc-if value="{{ isLogin }}" hint-placeholder-val="{{ false }}"><a class="forgot" onClick="{{ noop }}">Forgot?</a></sc-if></div><button class="submit" onClick="{{ noop }}">{{ ctaLabel }}</button><div class="toggle">{{ toggleText }} <a onClick="{{ switchMode }}">{{ toggleCta }}</a></div><div class="tc" style="text-align:center"><span class="age">🔞 18+ · Play responsibly</span></div><div class="legal">{{ legalText }}</div></div></div><aside class="valside"><div class="vinner"><div class="bonuscard"><div class="bctag">🎁 Welcome bonus</div><div class="bcbig">100% <b>match</b></div><div class="bcsub">We double your first deposit — deposit $50, play with $100. No rake, no fees, no catch.</div></div><div class="vfeat"><div class="vf"><span class="vk">⚡</span><span>Payouts hit your balance <b>instantly</b></span></div><div class="vf"><span class="vk">🎯</span><span>Locations <b>never repeat</b> — pure skill</span></div><div class="vf"><span class="vk">🔓</span><span><b>No holds</b> on withdrawals, ever</span></div></div><div class="proof"><div class="avstack"><sc-for list="{{ avatars }}" as="a" hint-placeholder-count="4"><span style="{{ a.style }}">{{ a.i }}</span></sc-for></div><div class="prooftxt"><b>{{ playersStr }} players</b><br>staking real money this week</div></div></div></aside></div></div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;mode&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;signup&quot;,&quot;options&quot;:[&quot;signup&quot;,&quot;login&quot;],&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;State&quot;}}">
+class Component extends DCLogic {
+  state = { mode: 'signup', showPw: false, remember: true };
+  renderVals(){
+    const isSignup = this.state.mode==='signup';
+    const pal=['#39ff6a','#ffc24d','#5ad1ff','#ff6b9d'];
+    const avatars=['ME','AT','JS','+'].map((i,k)=>({i, style:'background:'+(k===3?'var(--surf)':pal[k])+(k===3?';color:var(--dim)':'')}));
+    return {
+      isSignup, isLogin: !isSignup,
+      title: isSignup ? 'Create account' : 'Welcome back',
+      subtitle: isSignup ? 'Your first deposit is matched 100%. Set up in under a minute.' : 'Log in to keep playing and cash out your winnings.',
+      ctaLabel: isSignup ? 'Create account →' : 'Log in →',
+      toggleText: isSignup ? 'Already have an account?' : 'New to Geostakes?',
+      toggleCta: isSignup ? 'Log in' : 'Create one — free',
+      switchMode: ()=>this.setState({mode: isSignup?'login':'signup'}),
+      metaLeft: isSignup ? 'Email me bonus alerts' : 'Remember me',
+      pwType: this.state.showPw ? 'text' : 'password',
+      pwPlaceholder: isSignup ? 'At least 8 characters' : 'Your password',
+      peekLabel: this.state.showPw ? 'HIDE' : 'SHOW',
+      togglePw: ()=>this.setState({showPw:!this.state.showPw}),
+      rememberCls: this.state.remember?'on':'', rememberMark: this.state.remember?'✓':'',
+      toggleRemember: ()=>this.setState({remember:!this.state.remember}),
+      legalText: isSignup ? 'By creating an account you agree to our Terms & Privacy Policy. Gambling can be addictive.' : 'Protected by 256-bit SSL encryption.',
+      avatars, playersStr:'145',
+      noop:()=>{}
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -13,13 +13,15 @@ export function ConditionalLayout({
 }) {
   const pathname = usePathname();
 
-  // Hide header and banner on game routes
+  // Hide header and banner on game routes and auth pages
   const isGameRoute = pathname.startsWith("/play");
+  const isAuthRoute = pathname.startsWith("/auth");
+  const hideLayout = isGameRoute || isAuthRoute;
 
   return (
     <>
-      {!isGameRoute && header}
-      {!isGameRoute && banner}
+      {!hideLayout && header}
+      {!hideLayout && banner}
       {children}
     </>
   );

@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { SignInForm } from "./sign-in-form";
+import { ArcadeAuthLayout } from "@/components/arcade-auth-layout";
 
 export const metadata = {
   title: "Sign in — Geostakes",
@@ -24,17 +24,5 @@ export default async function SignInPage({
 
   const { error } = await searchParams;
 
-  return (
-    <div className="flex flex-1 items-center justify-center px-6 py-8 sm:py-16">
-      <div className="w-full max-w-sm flex flex-col gap-6 glass-card p-6 sm:p-8">
-        {error === "auth-failed" ? (
-          <p className="text-sm text-destructive text-center">
-            Sign-in failed. Try again.
-          </p>
-        ) : null}
-
-        <SignInForm />
-      </div>
-    </div>
-  );
+  return <ArcadeAuthLayout />;
 }
