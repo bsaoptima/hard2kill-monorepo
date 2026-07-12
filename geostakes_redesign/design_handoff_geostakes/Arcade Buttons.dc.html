@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet data-dc-atomics><meta name="design_doc_mode" content="canvas"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Saira+Condensed:ital,wght@0,700;0,800;0,900;1,800;1,900&family=Space+Grotesk:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet"><style>
+:root{--bg:#08090a;--surf:#111114;--line:#26272e;--acc:#39ff6a;--accd:#1c7a3a;--txt:#f4f5f2;--dim:#8b8c95;--mono:'Space Mono',monospace;--disp:'Saira Condensed',sans-serif;--ui:'Space Grotesk',system-ui,sans-serif}
+body{margin:0;background:#050506;color:var(--txt);font-family:var(--ui)}
+.turn{padding:44px 48px}
+.thd{display:flex;align-items:baseline;gap:12px;margin:0 0 8px}
+.tid{font:700 11px var(--mono);padding:4px 9px;background:var(--acc);color:#06180d;border-radius:4px;text-decoration:none}
+.tname{font-family:var(--disp);font-style:italic;font-weight:900;font-size:22px;text-transform:uppercase;letter-spacing:.01em}
+.tsub{color:var(--dim);font-size:13px;margin:0 0 28px}
+.opts{display:flex;flex-wrap:wrap;gap:26px;align-items:flex-start}
+.opt{flex:none;width:360px;scroll-margin-top:20px}
+.olabel{display:flex;align-items:center;gap:9px;margin-bottom:12px}
+.oid{font:700 11px var(--mono);padding:4px 9px;background:rgba(255,255,255,.08);color:var(--txt);border-radius:5px;text-decoration:none}
+.oname{font-size:13px;font-weight:600}
+.otag{font-family:var(--mono);font-size:11px;color:var(--dim)}
+.opt:target .oid{background:var(--acc);color:#06180d}
+.card{background:var(--surf);border:1px solid var(--line);border-radius:12px;padding:30px 28px;background-image:radial-gradient(rgba(255,255,255,.03) 1px,transparent 1px);background-size:18px 18px}
+.chips{display:flex;gap:10px;margin-bottom:18px}
+.stack{display:flex;flex-direction:column;gap:14px}
+.hint{font-family:var(--mono);font-size:11px;color:var(--dim);letter-spacing:.04em;margin:20px 0 0;line-height:1.6}
+.next{margin:30px 0 0;font-size:13px;color:var(--dim);line-height:1.7}
+.next a{color:var(--acc);text-decoration:none;font-family:var(--mono);font-size:11px;padding:2px 7px;background:rgba(57,255,106,.1);border-radius:4px}
+
+/* base button */
+.bt{font-family:var(--disp);font-style:italic;font-weight:900;text-transform:uppercase;border:none;cursor:pointer;color:#06180d;background:var(--acc);letter-spacing:.01em}
+.play{width:100%;font-size:26px;padding:20px}
+.chip{font-size:18px;padding:11px 20px;background:var(--surf);color:var(--txt);border:1px solid var(--line)}
+.chip.on{background:var(--acc);color:#06180d;border-color:var(--acc)}
+
+/* 1a — 3D chunky press */
+.a .play,.a .chip{border-radius:6px}
+.a .play{box-shadow:0 7px 0 var(--accd);transition:.08s}
+.a .play:active{transform:translateY(5px);box-shadow:0 2px 0 var(--accd)}
+.a .chip.on{box-shadow:0 4px 0 var(--accd)}
+.a .chip{box-shadow:0 4px 0 #000;transition:.08s}
+.a .chip:active{transform:translateY(3px);box-shadow:0 1px 0 #000}
+
+/* 1b — 8-bit pixel notch */
+.pixclip{clip-path:polygon(7px 0,calc(100% - 7px) 0,100% 7px,100% calc(100% - 7px),calc(100% - 7px) 100%,7px 100%,0 calc(100% - 7px),0 7px)}
+.b .play{box-shadow:inset 0 -6px 0 rgba(0,0,0,.28),inset 0 3px 0 rgba(255,255,255,.35)}
+.b .play:active{box-shadow:inset 0 -3px 0 rgba(0,0,0,.28),inset 0 2px 0 rgba(255,255,255,.3)}
+.b .chip{box-shadow:inset 0 -4px 0 rgba(0,0,0,.4)}
+.b .chip.on{box-shadow:inset 0 -4px 0 rgba(0,0,0,.28),inset 0 2px 0 rgba(255,255,255,.3)}
+
+/* 1c — bevel cabinet key */
+.c .play,.c .chip{border-radius:4px}
+.c .play{background:linear-gradient(180deg,#6dff9a,#22d65a);border-top:2px solid #9dffbb;border-bottom:3px solid #12913f;box-shadow:0 5px 12px rgba(0,0,0,.5),inset 0 2px 0 rgba(255,255,255,.5)}
+.c .play:active{transform:translateY(2px);box-shadow:0 2px 6px rgba(0,0,0,.5),inset 0 2px 0 rgba(255,255,255,.4)}
+.c .chip{background:linear-gradient(180deg,#22242b,#141519);border-top:1px solid #3a3c45;border-bottom:2px solid #050506}
+.c .chip.on{background:linear-gradient(180deg,#6dff9a,#22d65a);color:#06180d;border-top:2px solid #9dffbb;border-bottom:3px solid #12913f}
+
+/* 1d — coin-op ticket outline */
+.d .play{background:transparent;color:var(--acc);border:2px solid var(--acc);position:relative}
+.d .play::before{content:"";position:absolute;inset:4px;border:1px dashed rgba(57,255,106,.4)}
+.d .play:hover{background:rgba(57,255,106,.08)}
+.d .chip{background:transparent;color:var(--dim);border:2px solid var(--line)}
+.d .chip.on{background:transparent;color:var(--acc);border-color:var(--acc)}
+.bolt{position:absolute;width:4px;height:4px;border-radius:50%;background:var(--acc)}
+</style></helmet><section class="turn" id="t1"><div class="thd"><a class="tid" href="#t1">1</a><span class="tname">Arcade button treatments</span></div><p class="tsub">Same flat neon look — no tilt, no soft glow — pushed four different arcade directions. Tap Play to feel the press.</p><div class="opts"><div class="opt" id="1a"><div class="olabel"><a class="oid" href="#1a">1a</a><span class="oname">Chunky press</span><span class="otag">solid 3D shadow</span></div><div class="card a"><div class="chips"><button class="bt chip on">$0.50</button><button class="bt chip">$1.00</button></div><div class="stack"><button class="bt play">Play · $0.50 →</button></div><p class="hint">Solid offset shadow · physically depresses<br>on click. The most \u201cbutton\u201d of the set.</p></div></div><div class="opt" id="1b"><div class="olabel"><a class="oid" href="#1b">1b</a><span class="oname">8-bit pixel</span><span class="otag">notched corners</span></div><div class="card b"><div class="chips"><button class="bt chip pixclip on">$0.50</button><button class="bt chip pixclip">$1.00</button></div><div class="stack"><button class="bt play pixclip">Play · $0.50 →</button></div><p class="hint">Cut pixel corners + inset bevel. Reads<br>like a retro cabinet / pixel-art UI.</p></div></div><div class="opt" id="1c"><div class="olabel"><a class="oid" href="#1c">1c</a><span class="oname">Cabinet key</span><span class="otag">glossy plastic</span></div><div class="card c"><div class="chips"><button class="bt chip on">$0.50</button><button class="bt chip">$1.00</button></div><div class="stack"><button class="bt play">Play · $0.50 →</button></div><p class="hint">Beveled, glossy top, hard bottom lip \u2014<br>like a real arcade cabinet button.</p></div></div><div class="opt" id="1d"><div class="olabel"><a class="oid" href="#1d">1d</a><span class="oname">Coin-op outline</span><span class="otag">ticket / neon tube</span></div><div class="card d"><div class="chips"><button class="bt chip on">$0.50</button><button class="bt chip">$1.00</button></div><div class="stack"><button class="bt play"><span class="bolt" style="top:6px;left:6px"></span><span class="bolt" style="top:6px;right:6px"></span><span class="bolt" style="bottom:6px;left:6px"></span><span class="bolt" style="bottom:6px;right:6px"></span>Play · $0.50 →</button></div><p class="hint">Hollow neon-tube outline with bolt<br>corners. Lighter, more \u201csignage.\u201d</p></div></div></div><p class="next">Try next: \u201capply <a href="#1a">1a</a> to the landing page\u201d · \u201c<a href="#1b">1b</a> but thicker pixels\u201d · \u201cmix <a href="#1c">1c</a> play button with <a href="#1a">1a</a> chips\u201d · \u201cmore arcade elsewhere too (headers, cards)\u201d</p></section>
+</x-dc>
+</body>
+</html>

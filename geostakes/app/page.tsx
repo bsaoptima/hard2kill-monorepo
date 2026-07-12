@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { DepositSuccessToast } from "@/components/deposit-success-toast";
 import { DiscordFloat } from "@/components/discord-float";
+import { ArcadeHero } from "@/components/arcade-hero";
 
 
 const GRID_MATCHES = [
@@ -251,13 +252,7 @@ function Hero() {
 
   return (
     <section className="hero hero-split" id="hero">
-      <div className="hero-stage" />
-      <div className="hero-content">
-        <div className="hero-text">
-          <StakePickerCard />
-        </div>
-        <HeroSoloDemo />
-      </div>
+      <ArcadeHero />
       <div className="hero-footstats">
         <div className="hero-footstats-inner">
           <div className="hero-stat">
@@ -422,26 +417,24 @@ function initials(name: string) {
 }
 
 function LiveGames() {
-  // Using static pool for now - will be replaced with real solo round data later
-  const rows = RECENT_POOL.slice(0, 10);
+  const [rows, setRows] = useState<RecentGame[]>(RECENT_POOL.slice(0, 10));
 
-  // Disabled API fetch for now since it returns old duel format
-  // useEffect(() => {
-  //   async function fetchGames() {
-  //     try {
-  //       const res = await fetch("/api/public-games", { cache: "no-store" });
-  //       if (res.ok) {
-  //         const data = await res.json();
-  //         if (data.games && data.games.length > 0) {
-  //           setRows(data.games);
-  //         }
-  //       }
-  //     } catch (err) {
-  //       console.error("Failed to fetch public games:", err);
-  //     }
-  //   }
-  //   fetchGames();
-  // }, []);
+  useEffect(() => {
+    async function fetchRounds() {
+      try {
+        const res = await fetch("/api/recent-rounds", { cache: "no-store" });
+        if (res.ok) {
+          const data = await res.json();
+          if (data.rounds && data.rounds.length > 0) {
+            setRows(data.rounds);
+          }
+        }
+      } catch (err) {
+        console.error("Failed to fetch recent rounds:", err);
+      }
+    }
+    fetchRounds();
+  }, []);
 
   return (
     <section className="section" id="live">

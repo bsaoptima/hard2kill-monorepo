@@ -3,7 +3,10 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { Brand } from "@/components/brand";
 import { WalletBox } from "@/components/wallet-box";
-import { LogoutButton } from "@/components/logout-button";
+import { ProfileButton } from "@/components/profile-button";
+import { ArcadeButton } from "@/components/arcade-button";
+import { GrayButton } from "@/components/gray-button";
+import { MobileMenu } from "@/components/mobile-menu";
 import { Gift } from "lucide-react";
 
 export async function Header() {
@@ -16,6 +19,7 @@ export async function Header() {
   let bonus = 0;
   let totalBalance = 0;
   let bonusEligible = false;
+  let username = "Player";
   // Coins balance is fetched but not displayed for now. Re-enable by
   // un-commenting the <WalletBox label="Coins" .../> line below.
   let coins = 0;
@@ -29,6 +33,12 @@ export async function Header() {
     bonus = Number(data?.bonus ?? 0);
     totalBalance = cash + bonus;
     coins = Number(data?.coins ?? 0);
+
+    // Get username from user metadata or email
+    username = user.user_metadata?.username ||
+               user.user_metadata?.display_name ||
+               user.email?.split('@')[0] ||
+               'Player';
 
     // Check if eligible for first deposit bonus
     const adminSupabase = createAdminClient();
@@ -46,55 +56,40 @@ export async function Header() {
     <header className="flex justify-between items-center px-4 sm:px-8 py-3 sm:py-5 border-b border-[#1a1a1a]">
       <Brand />
       {user ? (
-        <div className="flex gap-2 sm:gap-3 items-center">
-          <WalletBox label="Balance" amount={`$${totalBalance.toFixed(2)}`} />
-          {/* <WalletBox label="Coins" amount={String(coins)} /> */}
-          {/* Profile link hidden until wired to real data */}
-          <Link
-            href="/deposit"
-            className="relative bg-primary text-primary-foreground border-none px-3 sm:px-5 py-2 sm:py-2.5 uppercase tracking-[0.02em] hover:brightness-105 hover:-translate-y-px transition-all"
-            style={{
-              fontFamily: "var(--font-anton), Anton, 'Space Grotesk', sans-serif",
-              fontStyle: "italic",
-              fontWeight: 400,
-              fontSize: "13px",
-            }}
-          >
-            {bonusEligible && (
-              <span className="absolute -top-1 -right-1 flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-green-500 text-[9px] font-bold text-white shadow-lg">
-                <Gift className="w-2.5 h-2.5" />
-                +100%
-              </span>
-            )}
-            <span className="sm:text-[15px]">Deposit</span>
-          </Link>
-          <Link
-            href="/withdraw"
-            className="hidden lg:block bg-transparent text-foreground border border-[var(--line-2,#2a2f37)] px-5 py-2.5 uppercase tracking-[0.02em] hover:border-foreground hover:-translate-y-px transition-all"
-            style={{
-              fontFamily: "var(--font-anton), Anton, 'Space Grotesk', sans-serif",
-              fontStyle: "italic",
-              fontWeight: 400,
-              fontSize: "15px",
-            }}
-          >
-            Withdraw
-          </Link>
-          <LogoutButton />
-        </div>
+        <>
+          {/* Desktop menu - hidden on mobile */}
+          <div className="hidden lg:flex gap-2 sm:gap-3 items-center">
+            <WalletBox label="Balance" amount={`$${totalBalance.toFixed(2)}`} />
+            {/* <WalletBox label="Coins" amount={String(coins)} /> */}
+            {/* Profile link hidden until wired to real data */}
+            <div className="relative">
+              <ArcadeButton href="/deposit">
+                <span className="sm:text-[17px]">Deposit</span>
+              </ArcadeButton>
+              {bonusEligible && (
+                <span className="absolute -top-1 -right-1 flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-green-500 text-[9px] font-bold text-white shadow-lg">
+                  <Gift className="w-2.5 h-2.5" />
+                  +100%
+                </span>
+              )}
+            </div>
+            <GrayButton href="/withdraw">
+              Withdraw
+            </GrayButton>
+            <ProfileButton username={username} balance={totalBalance} />
+          </div>
+
+          {/* Mobile hamburger menu */}
+          <MobileMenu
+            username={username}
+            balance={totalBalance}
+            bonusEligible={bonusEligible}
+          />
+        </>
       ) : (
-        <Link
-          href="/auth/signin"
-          className="bg-primary text-primary-foreground border-none px-6 py-2.5 uppercase tracking-[0.02em] hover:brightness-105 hover:-translate-y-px transition-all"
-          style={{
-            fontFamily: "var(--font-anton), Anton, 'Space Grotesk', sans-serif",
-            fontStyle: "italic",
-            fontWeight: 400,
-            fontSize: "16px",
-          }}
-        >
-          Login
-        </Link>
+        <ArcadeButton href="/auth/signin">
+          <span className="text-[17px]">Login</span>
+        </ArcadeButton>
       )}
     </header>
   );

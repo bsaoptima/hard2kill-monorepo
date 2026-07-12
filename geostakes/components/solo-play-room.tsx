@@ -49,20 +49,28 @@ export function SoloPlayRoom() {
   const [sessionPL, setSessionPL] = useState(0);
   const [isFirstRound, setIsFirstRound] = useState(true);
 
-  // Fetch balance on mount
+  // Fetch balance on mount and check if insufficient
   useEffect(() => {
     fetchBalance();
   }, []);
 
+  // Check balance immediately when loaded
+  useEffect(() => {
+    if (balance !== null && balance.total < stake) {
+      toast.error("Insufficient balance - please add funds to play");
+      router.push("/deposit");
+    }
+  }, [balance, stake, router]);
+
   // Auto-start after intro animation AND balance is loaded (first round only)
   useEffect(() => {
-    if (phase === "intro" && balance !== null) {
+    if (phase === "intro" && balance !== null && balance.total >= stake) {
       const timer = setTimeout(() => {
         startRound();
       }, INTRO_DURATION_MS);
       return () => clearTimeout(timer);
     }
-  }, [phase, balance]);
+  }, [phase, balance, stake]);
 
   async function fetchBalance() {
     const res = await fetch("/api/balance");
@@ -180,7 +188,13 @@ export function SoloPlayRoom() {
     await startRound();
   }
 
-  if (phase === "intro" && isFirstRound) {
+  // Don't show intro until balance is loaded
+  if (balance === null) {
+    return <div>Loading...</div>;
+  }
+
+  // Don't show intro if insufficient balance (will redirect in useEffect)
+  if (phase === "intro" && isFirstRound && balance.total >= stake) {
     return <IntroScreen stake={stake} />;
   }
 

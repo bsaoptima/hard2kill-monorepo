@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet data-dc-atomics><meta name="viewport" content="width=device-width, initial-scale=1"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Saira+Condensed:ital,wght@0,700;0,800;0,900;1,800;1,900&family=Space+Grotesk:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet"><style>
+:root{--bg:#08090a;--surf:#111114;--surf2:#191a1f;--line:#26272e;--acc:#39ff6a;--accd:#1c7a3a;--gold:#ffc24d;--txt:#f4f5f2;--dim:#8b8c95;--mono:'Space Mono',monospace;--disp:'Saira Condensed',sans-serif;--ui:'Space Grotesk',system-ui,sans-serif}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--txt);font-family:var(--ui);-webkit-font-smoothing:antialiased}
+.app{position:relative;min-height:100vh}
+.app::before{content:"";position:fixed;inset:0;background-image:radial-gradient(rgba(255,255,255,.035) 1px,transparent 1px);background-size:22px 22px;pointer-events:none;z-index:0}
+a{color:var(--acc);text-decoration:none}a:hover{color:var(--txt)}
+.wrap{max-width:1240px;margin:0 auto;padding:0 32px;position:relative;z-index:1}
+.lbl{font-family:var(--mono);font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--dim)}
+.mono{font-family:var(--mono)}.dim{color:var(--dim)}
+.hd{position:sticky;top:0;z-index:40;background:rgba(8,9,10,.82);backdrop-filter:blur(14px);border-bottom:1px solid var(--line)}
+.hdin{height:76px;display:flex;align-items:center;justify-content:space-between}
+.logo{font-family:var(--disp);font-style:italic;font-weight:900;font-size:28px;letter-spacing:-.01em;color:var(--txt)}
+.logo b{color:var(--acc)}
+.back{display:inline-flex;align-items:center;gap:8px;font-size:13px;font-weight:600;color:var(--dim);margin-left:28px}
+.back:hover{color:var(--txt)}
+.hleft{display:flex;align-items:center}
+.hright{display:flex;align-items:center;gap:16px}
+.bal{display:flex;flex-direction:column;gap:3px;line-height:1;text-align:right}
+.balv{font-family:var(--disp);font-style:italic;font-weight:900;font-size:22px;color:var(--acc)}
+.avbtn{width:40px;height:40px;background:var(--surf2);border:1px solid var(--line);color:var(--txt);font-family:var(--disp);font-style:italic;font-weight:900;font-size:15px;display:flex;align-items:center;justify-content:center}
+.col1{max-width:760px;margin:0 auto;padding:44px 32px 70px;position:relative;z-index:1}
+.h1{font-family:var(--disp);font-style:italic;font-weight:900;font-size:clamp(44px,6vw,64px);line-height:.9;letter-spacing:-.015em;text-transform:uppercase;margin:0}
+.tchips{display:flex;gap:18px;margin:16px 0 22px;font-family:var(--mono);font-size:11px;letter-spacing:.06em;color:var(--dim);text-transform:uppercase;flex-wrap:wrap}
+.tchips b{color:var(--txt)}
+/* available balance banner */
+.avail{display:flex;align-items:center;justify-content:space-between;background:var(--surf);border:1px solid var(--line);padding:16px 20px;margin:0 0 26px}
+.avail .lbl{margin-bottom:6px}
+.availv{font-family:var(--disp);font-style:italic;font-weight:900;font-size:34px;color:var(--acc);line-height:1}
+.availnote{font-family:var(--mono);font-size:11px;color:var(--dim);text-align:right;max-width:200px;line-height:1.5}
+.panel{background:var(--surf);border:1px solid var(--line);padding:26px 28px;margin-bottom:18px}
+.steplbl{font-family:var(--mono);font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--acc);margin-bottom:4px}
+.ph{font-family:var(--disp);font-style:italic;font-weight:800;font-size:24px;text-transform:uppercase;margin:0 0 18px}
+.customwrap{position:relative}
+.cur{position:absolute;left:16px;top:50%;transform:translateY(-50%);font-family:var(--disp);font-style:italic;font-weight:900;font-size:19px;color:var(--dim);pointer-events:none}
+.custom{width:100%;background:var(--surf2);border:1px solid var(--line);color:var(--txt);font-family:var(--disp);font-style:italic;font-weight:900;font-size:19px;padding:14px 16px 14px 34px}
+.custom:focus{outline:none;border-color:var(--acc)}
+.custom.over{border-color:#ff6b6b;color:#ff6b6b}
+.custom::placeholder{color:var(--dim)}
+.amts{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.amt{font-family:var(--disp);font-style:italic;font-weight:900;font-size:25px;padding:18px 0;text-align:center;background:var(--surf2);color:var(--txt);border:1px solid var(--line);cursor:pointer;box-shadow:0 4px 0 #000;transition:transform .08s,border-color .12s}
+.amt:hover{border-color:var(--dim)}
+.amt:active{transform:translateY(3px);box-shadow:0 1px 0 #000}
+.amt.on{background:var(--acc);color:#06180d;border-color:var(--acc);box-shadow:0 4px 0 var(--accd)}
+.amt.on:active{box-shadow:0 1px 0 var(--accd)}
+.overmsg{font-family:var(--mono);font-size:11px;color:#ff6b6b;margin-top:10px}
+.opt{display:flex;align-items:center;gap:16px;padding:18px;background:var(--surf2);border:1px solid var(--line);cursor:pointer;transition:border-color .12s}
+.opt + .opt{margin-top:12px}
+.opt:hover{border-color:var(--dim)}
+.opt.on{border-color:var(--acc);background:color-mix(in srgb,var(--acc) 6%,var(--surf2))}
+.radio{width:20px;height:20px;flex:none;border-radius:50%;border:2px solid var(--line);display:flex;align-items:center;justify-content:center}
+.opt.on .radio{border-color:var(--acc)}
+.radio i{width:10px;height:10px;border-radius:50%;background:transparent}
+.opt.on .radio i{background:var(--acc)}
+.oicon{width:42px;height:42px;flex:none;display:flex;align-items:center;justify-content:center;font-size:21px;background:var(--bg);border:1px solid var(--line)}
+.obody{flex:1;min-width:0}
+.otitle{font-family:var(--disp);font-style:italic;font-weight:800;font-size:19px;text-transform:uppercase;line-height:1;display:flex;align-items:center;gap:10px}
+.pop{font-family:var(--mono);font-style:normal;font-size:9px;letter-spacing:.12em;color:#06180d;background:var(--acc);padding:3px 7px}
+.osub{font-family:var(--mono);font-size:11px;color:var(--dim);letter-spacing:.03em;margin-top:6px}
+.optx{border:1px solid var(--line);border-top:none;background:var(--surf2);padding:18px}
+.dest{margin-top:0}
+.dest label{display:block;font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);margin-bottom:8px}
+.inp{width:100%;background:var(--bg);border:1px solid var(--line);color:var(--txt);font-family:var(--ui);font-size:15px;padding:13px 15px}
+.inp:focus{outline:none;border-color:var(--acc)}
+.wcard{border:1px solid color-mix(in srgb,var(--acc) 35%,var(--line));background:color-mix(in srgb,var(--acc) 6%,var(--bg));padding:14px 16px;display:flex;align-items:center;gap:12px}
+.pdot{width:8px;height:8px;flex:none;border-radius:50%;background:var(--acc);box-shadow:0 0 10px var(--acc);animation:pulse 1.6s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+.wmeta{flex:1;min-width:0}
+.wname{font-weight:700;font-size:14px}
+.waddr{font-family:var(--mono);font-size:11px;color:var(--dim);margin-top:3px}
+.wbal{font-family:var(--mono);font-size:13px;color:var(--acc);font-weight:700}
+.wdisc{font-family:var(--mono);font-size:11px;color:#ff6b6b;cursor:pointer;margin-left:10px}
+.sumline{display:flex;border:1px solid var(--line);background:var(--surf2);margin-bottom:16px}
+.sumc{flex:1;padding:14px 18px;border-right:1px solid var(--line)}
+.sumc:last-child{border-right:none}
+.sumv{font-family:var(--disp);font-style:italic;font-weight:900;font-size:23px;margin-top:4px}
+.sumv.g{color:var(--acc)}
+.cta{width:100%;font-family:var(--disp);font-style:italic;font-weight:900;font-size:23px;text-transform:uppercase;padding:20px;background:var(--acc);color:#06180d;border:none;cursor:pointer;box-shadow:0 6px 0 var(--accd);transition:transform .08s,filter .12s}
+.cta:hover{filter:brightness(1.08)}
+.cta:active{transform:translateY(4px);box-shadow:0 2px 0 var(--accd)}
+.cta:disabled{background:var(--surf2);color:var(--dim);box-shadow:0 6px 0 #000;cursor:not-allowed}
+.cta.busy{background:var(--gold);box-shadow:0 6px 0 #8a6420}
+.ctasub{font-family:var(--mono);font-size:11px;color:var(--dim);text-align:center;margin-top:12px;line-height:1.7;letter-spacing:.02em}
+.stripe-wm{color:#a5a0ff;font-weight:700;font-family:var(--ui)}
+.trust{margin-top:18px;display:flex;flex-direction:column;gap:9px;border-top:1px solid var(--line);padding-top:16px}
+.tr{display:flex;align-items:center;gap:10px;font-size:13px;color:#c8c9cf}
+.tr .ck{color:var(--acc);font-weight:700}
+.ticker{display:flex;align-items:center;gap:16px;background:var(--surf);border:1px solid var(--line);padding:12px 16px;margin:0 0 26px;overflow:hidden}
+.ticker .pdot{flex:none}
+.tk-lbl{font-family:var(--mono);font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--dim);white-space:nowrap;flex:none}
+.tk-view{flex:1;overflow:hidden;position:relative;mask-image:linear-gradient(90deg,transparent,#000 6%,#000 94%,transparent)}
+.tk-track{display:flex;gap:10px;width:max-content;animation:tkscroll 16s linear infinite}
+@keyframes tkscroll{to{transform:translateX(-50%)}}
+.tk-item{display:flex;align-items:center;gap:9px;white-space:nowrap;background:var(--surf2);border:1px solid var(--line);padding:7px 13px 7px 8px}
+.tk-item .tkav{width:26px;height:26px;flex:none;display:flex;align-items:center;justify-content:center;font-family:var(--disp);font-style:italic;font-weight:900;font-size:11px;color:#06180d}
+.tk-item b{font-weight:600;font-size:13px}
+.tk-item .tka{font-family:var(--disp);font-style:italic;font-weight:900;font-size:15px;color:var(--acc);margin-left:2px}
+.foot{padding:26px 0 40px;font-family:var(--mono);font-size:11px;color:var(--dim);letter-spacing:.03em;text-align:center;line-height:1.8}
+@media(max-width:560px){.amts{grid-template-columns:repeat(2,1fr)}.sumline{flex-direction:column}.sumc{border-right:none;border-bottom:1px solid var(--line)}}
+.wallet{display:flex;align-items:center;gap:10px;height:40px;background:var(--surf2);border:1px solid var(--line);padding:0 16px 0 7px}
+.coin{width:26px;height:26px;flex:none;display:flex;align-items:center;justify-content:center;font-family:var(--disp);font-style:italic;font-weight:900;font-size:17px;color:#3a2600;background:linear-gradient(140deg,#ffe08a,var(--gold) 45%,#d98a1a);border-radius:50%;box-shadow:0 0 12px -3px var(--gold),inset 0 1px 0 rgba(255,255,255,.5)}
+.wcol{display:flex;flex-direction:column;line-height:1;gap:4px}
+.wlbl{font-family:var(--mono);font-size:8px;letter-spacing:.16em;text-transform:uppercase;color:var(--dim)}
+.wval{font-family:var(--disp);font-style:italic;font-weight:900;font-size:19px;color:var(--acc)}
+</style></helmet><div class="app"><header class="hd"><div class="wrap hdin"><div class="hleft"><a href="Geostakes Landing.dc.html" class="logo">GEO<b>STAKES</b></a></div><div class="hright"><div class="wallet"><span class="coin">$</span><div class="wcol"><span class="wlbl">Balance</span><span class="wval">{{ balanceStr }}</span></div></div><div class="avbtn">VE</div></div></div></header><div class="col1"><h1 class="h1">Cash out</h1><div class="tchips"><span>⚡ <b>Instant</b> payout</span><span>💸 <b>$0</b> withdrawal fees</span><span>🔓 <b>No holds</b> on verified accounts</span></div><div class="ticker"><span class="pdot"></span><span class="tk-lbl">Latest payouts</span><div class="tk-view"><div class="tk-track"><sc-for list="{{ ticker }}" as="d" hint-placeholder-count="8"><span class="tk-item"><span class="tkav" style="{{ d.avStyle }}">{{ d.initials }}</span><b>{{ d.name }}</b><span class="tka">{{ d.amt }}</span></span></sc-for></div></div></div><div class="avail"><div><div class="lbl">Available to withdraw</div><div class="availv">{{ balanceStr }}</div></div><div class="availnote">Bonus funds must be wagered before they can be cashed out.</div></div><div class="panel"><div class="steplbl">Step 01</div><div class="ph">Amount</div><div class="customwrap"><span class="cur">$</span><input class="custom {{ overCls }}" type="text" inputmode="numeric" placeholder="Enter amount" value="{{ amountStr }}" onChange="{{ setCustom }}" onInput="{{ setCustom }}"></div><div class="lbl" style="margin:16px 0 10px">Quick amounts</div><div class="amts"><sc-for list="{{ amts }}" as="a" hint-placeholder-count="4"><button class="amt {{ a.cls }}" onClick="{{ a.pick }}">{{ a.label }}</button></sc-for></div><sc-if value="{{ isOver }}" hint-placeholder-val="{{ false }}"><div class="overmsg">You can withdraw up to {{ balanceStr }}.</div></sc-if></div><div class="panel"><div class="steplbl">Step 02</div><div class="ph">Where should it go?</div><div class="opt {{ cardCls }}" onClick="{{ pickCard }}"><span class="radio"><i></i></span><span class="oicon">🏦</span><div class="obody"><div class="otitle">Bank / Card<span class="pop">Fastest</span></div><div class="osub">Instant payout via Stripe</div></div></div><div class="opt {{ cryptoCls }}" onClick="{{ pickCrypto }}"><span class="radio"><i></i></span><span class="oicon"><svg width="22" height="18" viewBox="0 0 24 20"><linearGradient id="sg" x1="0" y1="20" x2="24" y2="0" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#9945FF"></stop><stop offset="1" stop-color="#14F195"></stop></linearGradient><path fill="url(#sg)" d="M4 0h20l-4 5H0zM0 7.5h20l4 5H4zM4 15h20l-4 5H0z"></path></svg></span><div class="obody"><div class="otitle">Crypto · SOL</div><div class="osub">Instant · send to your wallet</div></div></div><sc-if value="{{ isCard }}" hint-placeholder-val="{{ true }}"><div class="optx dest"><label>Payout destination</label><input class="inp" placeholder="Managed securely in Stripe — choose at checkout" readonly></div></sc-if><sc-if value="{{ isCrypto }}" hint-placeholder-val="{{ false }}"><div class="optx"><sc-if value="{{ walletConnected }}" hint-placeholder-val="{{ false }}"><div class="wcard"><span class="pdot"></span><div class="wmeta"><div class="wname">Wallet connected</div><div class="waddr">{{ walletAddr }}</div></div><span class="wbal">{{ walletBal }}</span><span class="wdisc" onClick="{{ disconnect }}">Disconnect</span></div></sc-if><sc-if value="{{ walletDisconnected }}"><div class="dest"><label>Destination wallet</label><input class="inp" placeholder="Connect via WalletConnect to auto-fill" readonly></div></sc-if></div></sc-if></div><div class="panel"><div class="steplbl">Step 03</div><div class="ph">Confirm payout</div><div class="sumline"><div class="sumc"><div class="lbl">Withdrawing</div><div class="sumv">{{ amountFmt }}</div></div><div class="sumc"><div class="lbl">Fees</div><div class="sumv">$0.00</div></div><div class="sumc"><div class="lbl" style="white-space:nowrap">You receive</div><div class="sumv g">{{ amountFmt }}</div></div></div><button class="cta {{ ctaBusyCls }}" disabled="{{ ctaDisabled }}" onClick="{{ ctaClick }}">{{ ctaLabel }}</button><div class="ctasub">{{ ctaSubA }} <span class="stripe-wm">{{ ctaSubBrand }}</span> {{ ctaSubB }}</div><div class="trust"><div class="tr"><span class="ck">✓</span>Payouts land instantly — most in under a minute</div><div class="tr"><span class="ck">✓</span>No holds, no minimums on verified accounts</div><div class="tr"><span class="ck">✓</span>Licensed & regulated · 18+, play responsibly</div></div></div><footer class="foot">© 2026 Geostakes · Play responsibly · 18+ where legal<br>Gambling can be addictive. If you need help, call 1-800-522-4700.</footer></div></div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{}">
+class Component extends DCLogic {
+  state = { amount: 50, method: 'card', walletConnected: false, busy: false };
+  balance = 128.40;
+  componentWillUnmount(){ clearTimeout(this.busyT); }
+  renderVals(){
+    const bal=this.balance;
+    const money=n=>'$'+Number(n).toFixed(2);
+    const amount=this.state.amount;
+    const presets=[25,50,100];
+    const amts=presets.map(v=>({label:'$'+v, cls: amount===v?'on':'', pick:()=>this.setState({amount:v})}))
+      .concat([{label:'Max', cls: amount===Math.floor(bal)?'on':'', pick:()=>this.setState({amount:Math.floor(bal*100)/100})}]);
+    const setCustom=(e)=>{ const raw=String(e.target.value).replace(/[^0-9.]/g,''); const v=parseFloat(raw)||0; this.setState({amount:v}); };
+    const isOver=amount>bal;
+    const isCard=this.state.method==='card';
+    const isCrypto=this.state.method==='crypto';
+    const wc=this.state.walletConnected;
+    const busy=this.state.busy;
+    const startBusy=()=>{ this.setState({busy:true}); clearTimeout(this.busyT); this.busyT=setTimeout(()=>this.setState({busy:false}),2200); };
+    let ctaLabel, ctaSubA='', ctaSubBrand='', ctaSubB='', ctaDisabled=false, ctaClick=()=>{};
+    if(amount<10){ ctaLabel='Enter at least $10'; ctaDisabled=true; ctaSubA='Minimum withdrawal is $10.'; }
+    else if(isOver){ ctaLabel='Amount exceeds balance'; ctaDisabled=true; ctaSubA='You can withdraw up to '+money(bal)+'.'; }
+    else if(isCard){
+      ctaLabel = busy ? 'Opening Stripe…' : 'Withdraw '+money(amount)+' →';
+      ctaSubA='Paid out through'; ctaSubBrand='Stripe'; ctaSubB='to your bank or card — pick the destination securely at checkout.';
+      ctaClick=startBusy;
+    } else if(!wc){
+      ctaLabel = busy ? 'Waiting for wallet…' : 'Connect wallet';
+      ctaSubA='Connect via WalletConnect so we know where to send your SOL.';
+      ctaClick=()=>{ this.setState({busy:true}); clearTimeout(this.busyT); this.busyT=setTimeout(()=>this.setState({busy:false, walletConnected:true}),900); };
+    } else {
+      ctaLabel = busy ? 'Sending…' : 'Withdraw '+money(amount)+' to wallet →';
+      ctaSubA='Your SOL, worth '+money(amount)+', will arrive in your wallet in seconds.';
+      ctaClick=startBusy;
+    }
+    const pal=['#39ff6a','#ffc24d','#5ad1ff','#ff6b9d'];
+    const rawRecent=[{name:'MERIDIAN',amt:'$240'},{name:'atlas',amt:'$60'},{name:'joao_sp',amt:'$18'},{name:'PARALLEL',amt:'$115'},{name:'ana_curitiba',amt:'$32'},{name:'vex.04',amt:'$500'},{name:'tomato.png',amt:'$44'},{name:'kestrel',amt:'$90'}];
+    const recent=rawRecent.map((d,i)=>({...d, initials:d.name.replace(/[^a-z0-9]/gi,'').slice(0,2).toUpperCase(), avStyle:'background:'+pal[i%pal.length]}));
+    return {
+      balanceStr: money(bal),
+      amts, setCustom, amountStr: amount>0?String(amount):'',
+      amountFmt: money(amount), isOver, overCls: isOver?'over':'',
+      cardCls:isCard?'on':'', cryptoCls:isCrypto?'on':'', isCard, isCrypto,
+      pickCard:()=>this.setState({method:'card'}), pickCrypto:()=>this.setState({method:'crypto'}),
+      walletConnected:wc, walletDisconnected:!wc,
+      disconnect:()=>this.setState({walletConnected:false}),
+      walletAddr:'8xKp…Qr2v', walletBal:'3.42 SOL',
+      ctaLabel, ctaDisabled, ctaClick, ctaSubA, ctaSubBrand, ctaSubB, ctaBusyCls: busy?'busy':'',
+      ticker: recent.concat(recent)
+    };
+  }
+}
+</script>
+</body>
+</html>

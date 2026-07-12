@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet data-dc-atomics><meta name="viewport" content="width=device-width, initial-scale=1"><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Saira+Condensed:ital,wght@0,700;0,800;0,900;1,800;1,900&family=Space+Grotesk:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet"><style>
+:root{--bg:#08090a;--surf:#111114;--surf2:#191a1f;--line:#26272e;--acc:#39ff6a;--gold:#ffc24d;--txt:#f4f5f2;--dim:#8b8c95;--mono:'Space Mono',ui-monospace,monospace;--disp:'Saira Condensed',sans-serif;--ui:'Space Grotesk',system-ui,sans-serif}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--txt);font-family:var(--ui);-webkit-font-smoothing:antialiased;overflow-x:hidden}
+a{color:var(--acc);text-decoration:none}a:hover{color:var(--txt)}
+.app{position:relative;min-height:100vh}
+.app::before{content:"";position:fixed;inset:0;background-image:radial-gradient(rgba(255,255,255,.035) 1px,transparent 1px);background-size:22px 22px;pointer-events:none;z-index:0}
+.crt{position:fixed;inset:0;pointer-events:none;z-index:60;background:repeating-linear-gradient(0deg,rgba(0,0,0,.14) 0 1px,transparent 1px 3px);mix-blend-mode:multiply;opacity:.5}
+.crt.off{display:none}
+.wrap{max-width:1240px;margin:0 auto;padding:0 32px;position:relative;z-index:1}
+.mono{font-family:var(--mono)}
+.disp{font-family:var(--disp);font-style:italic}
+.upc{text-transform:uppercase}
+.dim{color:var(--dim)}
+.acc{color:var(--acc)}
+.lbl{font-family:var(--mono);font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--dim)}
+/* header */
+.hd{position:sticky;top:0;z-index:40;background:rgba(8,9,10,.82);backdrop-filter:blur(14px);border-bottom:1px solid var(--line)}
+.hdin{height:76px;display:flex;align-items:center;justify-content:space-between}
+.logo{font-family:var(--disp);font-style:italic;font-weight:900;font-size:30px;letter-spacing:-.01em;color:var(--txt)}
+.logo b{color:var(--acc)}
+.nav{display:flex;align-items:center;gap:34px}
+.nav a{font-size:13px;font-weight:600;letter-spacing:.02em;color:var(--dim)}.nav a:hover{color:var(--txt)}
+.login{font-family:var(--disp);font-style:italic;font-weight:800;font-size:18px;letter-spacing:.02em;padding:11px 26px;background:var(--acc);color:#06180d;border:none;cursor:pointer;box-shadow:0 4px 0 color-mix(in srgb,var(--acc) 52%,#000);transition:transform .08s,filter .12s}
+.login:hover{filter:brightness(1.12)}
+.login:active{transform:translateY(3px);box-shadow:0 1px 0 color-mix(in srgb,var(--acc) 52%,#000)}
+/* account cluster */
+.acct{display:flex;align-items:center;gap:16px}
+.bal{display:flex;flex-direction:column;gap:3px;padding-right:4px;line-height:1}
+.balv{font-family:var(--disp);font-style:italic;font-weight:900;font-size:22px;color:var(--acc)}
+.wallet{display:flex;align-items:center;gap:10px;height:40px;background:var(--surf2);border:1px solid var(--line);padding:0 16px 0 7px}
+.coin{width:26px;height:26px;flex:none;display:flex;align-items:center;justify-content:center;font-family:var(--disp);font-style:italic;font-weight:900;font-size:17px;color:#3a2600;background:linear-gradient(140deg,#ffe08a,var(--gold) 45%,#d98a1a);border-radius:50%;box-shadow:0 0 12px -3px var(--gold),inset 0 1px 0 rgba(255,255,255,.5)}
+.wcol{display:flex;flex-direction:column;line-height:1;gap:4px}
+.wlbl{font-family:var(--mono);font-size:8px;letter-spacing:.16em;text-transform:uppercase;color:var(--dim)}
+.wval{font-family:var(--disp);font-style:italic;font-weight:900;font-size:19px;color:var(--acc)}
+
+.btnsm{font-family:var(--disp);font-style:italic;font-weight:800;font-size:15px;letter-spacing:.02em;padding:9px 18px;cursor:pointer;border:none;transition:transform .08s,filter .12s,border-color .14s}
+.dep{background:var(--acc);color:#06180d;box-shadow:0 3px 0 color-mix(in srgb,var(--acc) 52%,#000)}
+.dep:hover{filter:brightness(1.1)}
+.dep:active{transform:translateY(2px);box-shadow:0 1px 0 color-mix(in srgb,var(--acc) 52%,#000)}
+.wd{background:transparent;color:var(--txt);border:1px solid var(--line)}
+.wd:hover{border-color:var(--dim)}
+.avwrap{position:relative}
+.avbtn{height:40px;padding:0 18px;gap:9px;background:var(--surf2);border:1px solid var(--line);color:var(--txt);font-family:var(--disp);font-style:italic;font-weight:800;font-size:16px;letter-spacing:.02em;text-transform:uppercase;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:border-color .14s}
+.avbtn:hover{border-color:var(--dim)}
+.menu{position:absolute;top:52px;right:0;background:var(--surf);border:1px solid var(--line);min-width:210px;padding:8px;box-shadow:0 24px 60px -24px #000;z-index:50}
+.menu.hide{display:none}
+.mhead{padding:8px 12px 12px;border-bottom:1px solid var(--line);margin-bottom:6px}
+.mname{font-weight:700;font-size:14px}
+.msub{font-family:var(--mono);font-size:11px;color:var(--dim);letter-spacing:.04em;margin-top:3px}
+.mi{display:flex;align-items:center;gap:11px;padding:10px 12px;font-size:14px;font-weight:500;color:var(--txt);cursor:pointer}
+.mi:hover{background:var(--surf2)}
+.mi.out{color:#ff6b6b}
+.midiv{height:1px;background:var(--line);margin:6px 0}
+/* marquee */
+.mq{background:var(--acc);color:#06180d;overflow:hidden;border-bottom:2px solid #06180d}
+.mqtrack{display:flex;white-space:nowrap;width:max-content;animation:mq 26s linear infinite;font-family:var(--mono);font-weight:700;font-size:13px;letter-spacing:.05em;padding:9px 0}
+.app.still .mqtrack{animation:none}
+.mqtrack span{padding:0 26px;text-transform:uppercase}
+.mqtrack b{color:#06180d;opacity:.55}
+@keyframes mq{to{transform:translateX(-50%)}}
+/* hero */
+.hero{display:grid;grid-template-columns:1.05fr 1fr;gap:56px;align-items:center;padding:72px 0 84px}
+.badge{display:inline-flex;align-items:center;gap:9px;font-family:var(--mono);font-size:12px;letter-spacing:.06em;color:var(--dim);border:1px solid var(--line);border-radius:999px;padding:7px 15px;background:var(--surf)}
+.pdot{width:8px;height:8px;border-radius:50%;background:var(--acc);box-shadow:0 0 10px var(--acc);animation:pulse 1.6s infinite}
+.app.still .pdot{animation:none}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+.h1{font-family:var(--disp);font-style:italic;font-weight:900;font-size:clamp(54px,6.8vw,104px);line-height:.86;letter-spacing:-.015em;text-transform:uppercase;margin:22px 0 0}
+.h1 .g{color:var(--acc);text-shadow:0 0 34px color-mix(in srgb,var(--acc) 55%,transparent)}
+.sub{font-size:19px;line-height:1.5;color:#c8c9cf;max-width:440px;margin:22px 0 30px}
+.chips{display:grid;grid-template-columns:1fr 1fr 2fr;gap:12px;margin-bottom:16px;max-width:440px}
+.chipcustom{position:relative;display:flex;align-items:center}
+.chipcustom .cc-cur{position:absolute;left:16px;font-family:var(--disp);font-style:italic;font-weight:800;font-size:22px;color:var(--dim);pointer-events:none}
+.chipin{width:100%;font-family:var(--disp);font-style:italic;font-weight:800;font-size:22px;padding:14px 16px 14px 30px;background:var(--surf);color:var(--txt);border:1px solid var(--line);box-shadow:0 4px 0 #000}
+.chipin:focus{outline:none;border-color:var(--acc)}
+.chipin.on{border-color:var(--acc);box-shadow:0 4px 0 var(--accd)}
+.chipin::placeholder{color:var(--dim)}
+.chip{font-family:var(--disp);font-style:italic;font-weight:800;font-size:22px;padding:14px 26px;background:var(--surf);color:var(--txt);border:1px solid var(--line);cursor:pointer;box-shadow:0 4px 0 #000;transition:transform .08s,border-color .14s}
+.chip:hover{border-color:var(--dim)}
+.chip:active{transform:translateY(3px);box-shadow:0 1px 0 #000}
+.chip.on{background:var(--acc);color:#06180d;border-color:var(--acc);box-shadow:0 4px 0 color-mix(in srgb,var(--acc) 52%,#000)}
+.chip.on:active{box-shadow:0 1px 0 color-mix(in srgb,var(--acc) 52%,#000)}
+.play{width:100%;max-width:440px;font-family:var(--disp);font-style:italic;font-weight:900;font-size:27px;letter-spacing:.01em;text-transform:uppercase;padding:22px;background:var(--acc);color:#06180d;border:none;cursor:pointer;box-shadow:0 7px 0 color-mix(in srgb,var(--acc) 52%,#000);transition:transform .08s,filter .12s}
+.play:hover{filter:brightness(1.08)}
+.play:active{transform:translateY(5px);box-shadow:0 2px 0 color-mix(in srgb,var(--acc) 52%,#000)}
+.trust{display:flex;gap:20px;margin-top:18px;font-family:var(--mono);font-size:11px;letter-spacing:.05em;color:var(--dim);text-transform:uppercase}
+.trust b{color:var(--txt)}
+/* console */
+.console{position:relative;background:var(--surf);border:1px solid var(--line);border-radius:14px;padding:14px;box-shadow:0 40px 90px -40px #000,inset 0 0 0 1px rgba(255,255,255,.02)}
+.chud{display:flex;align-items:center;justify-content:space-between;padding:4px 6px 12px}
+.live{display:flex;align-items:center;gap:7px;font-family:var(--mono);font-size:12px;letter-spacing:.16em;color:var(--acc)}
+.screen{position:relative;aspect-ratio:16/11;border-radius:8px;overflow:hidden;background:#000}
+.screen::after{content:"";position:absolute;inset:0;background:repeating-linear-gradient(0deg,rgba(0,0,0,.18) 0 1px,transparent 1px 3px);pointer-events:none}
+.recticle,.recticle span{position:absolute;pointer-events:none}
+.br{position:absolute;width:26px;height:26px;border:2px solid var(--acc);pointer-events:none;filter:drop-shadow(0 0 6px var(--acc))}
+.br.tl{top:14px;left:14px;border-right:0;border-bottom:0}
+.br.tr{top:14px;right:14px;border-left:0;border-bottom:0}
+.br.bl{bottom:14px;left:14px;border-right:0;border-top:0}
+.br.brr{bottom:14px;right:14px;border-left:0;border-top:0}
+.cross{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:36px;height:36px;pointer-events:none}
+.cross::before,.cross::after{content:"";position:absolute;background:color-mix(in srgb,var(--acc) 90%,transparent);box-shadow:0 0 6px var(--acc)}
+.cross::before{left:50%;top:0;width:2px;height:100%;transform:translateX(-50%)}
+.cross::after{top:50%;left:0;height:2px;width:100%;transform:translateY(-50%)}
+.timepill{position:absolute;top:14px;left:50%;transform:translateX(-50%);font-family:var(--mono);font-weight:700;font-size:13px;letter-spacing:.14em;color:#06180d;background:var(--acc);padding:5px 14px;border-radius:999px;z-index:3}
+.cfoot{display:flex;align-items:center;justify-content:space-between;padding:14px 6px 4px}
+.stakeg{display:flex;flex-direction:column;gap:3px}
+.stakev{font-family:var(--disp);font-style:italic;font-weight:900;font-size:30px}
+.multi{font-family:var(--disp);font-style:italic;font-weight:900;font-size:30px;color:var(--acc);text-shadow:0 0 24px color-mix(in srgb,var(--acc) 60%,transparent)}
+.meter{height:6px;background:var(--surf2);border-radius:3px;overflow:hidden;margin:12px 6px 0}
+.meterf{height:100%;width:78%;background:linear-gradient(90deg,var(--gold),var(--acc));box-shadow:0 0 12px var(--acc)}
+/* stats */
+.stats{display:grid;grid-template-columns:1fr 1fr 2.4fr;border:1px solid var(--line);border-radius:14px;overflow:hidden;background:var(--surf)}
+.stat{padding:34px 32px;border-right:1px solid var(--line);display:flex;flex-direction:column;justify-content:center}
+.stat:last-child{border-right:0}
+.statv{font-family:var(--disp);font-style:italic;font-weight:900;font-size:clamp(42px,4.6vw,66px);line-height:1;margin:12px 0 0}
+.statv.g{color:var(--acc);text-shadow:0 0 30px color-mix(in srgb,var(--acc) 45%,transparent)}
+.workh{font-family:var(--ui);font-weight:600;font-size:clamp(23px,2.5vw,40px);line-height:1.12;letter-spacing:-.012em;margin:14px 0 0}
+.workh .g{color:var(--acc)}
+/* section */
+.sec{padding:96px 0}
+.eyebrow{display:flex;align-items:center;gap:12px;margin-bottom:18px}
+.eyebrow i{font-family:var(--mono);font-size:12px;color:var(--acc);font-style:normal;letter-spacing:.18em}
+.eyebrow em{height:1px;flex:1;background:var(--line);font-style:normal}
+.h2{font-family:var(--disp);font-style:italic;font-weight:900;font-size:clamp(38px,5vw,68px);line-height:.94;letter-spacing:-.01em;text-transform:uppercase;margin:0}
+.lede{font-size:18px;color:var(--dim);margin:16px 0 0;max-width:520px}
+/* how */
+.how{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-top:52px}
+.step{position:relative;background:var(--surf);border:1px solid var(--line);border-radius:14px;padding:30px 26px 34px;overflow:hidden}
+.step:hover{border-color:color-mix(in srgb,var(--acc) 50%,var(--line))}
+.stepn{font-family:var(--disp);font-style:italic;font-weight:900;font-size:66px;line-height:1;color:var(--surf2);-webkit-text-stroke:1px var(--line)}
+.steph{font-family:var(--disp);font-style:italic;font-weight:800;font-size:26px;text-transform:uppercase;margin:16px 0 10px}
+.stepp{font-size:15px;line-height:1.55;color:var(--dim)}
+.stepbar{position:absolute;left:0;bottom:0;height:4px;width:100%;background:linear-gradient(90deg,var(--acc),transparent)}
+/* feed */
+.feedwrap{margin-top:44px;border:1px solid var(--line);border-radius:14px;overflow:hidden;background:var(--surf)}
+.frow{display:grid;grid-template-columns:1.6fr .8fr .8fr .9fr .8fr;align-items:center;padding:16px 24px;border-bottom:1px solid var(--line)}
+.frow:last-child{border-bottom:0}
+.fhead{background:var(--surf2)}
+.fhead .fc{font-family:var(--mono);font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--dim)}
+.player{display:flex;align-items:center;gap:13px}
+.av{width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-family:var(--disp);font-style:italic;font-weight:900;font-size:15px;color:#06180d}
+.pn{font-weight:600;font-size:15px}
+.fc{font-family:var(--mono);font-size:14px}
+.pay-win{color:var(--acc);font-weight:700}
+.pay-hot{color:var(--acc);font-weight:700;text-shadow:0 0 18px color-mix(in srgb,var(--acc) 60%,transparent)}
+.pay-mid{color:var(--gold);font-weight:700}
+.pay-bust{color:var(--dim)}
+.row-hot{background:color-mix(in srgb,var(--acc) 6%,var(--surf))}
+/* faq */
+.faqlist{margin-top:44px;border-top:1px solid var(--line)}
+.faq{border-bottom:1px solid var(--line);cursor:pointer}
+.faqq{display:flex;align-items:center;gap:20px;padding:26px 8px}
+.faqn{font-family:var(--mono);font-size:13px;color:var(--acc);letter-spacing:.1em}
+.faqt{font-family:var(--disp);font-style:italic;font-weight:800;font-size:24px;text-transform:uppercase;flex:1}
+.faqx{font-family:var(--mono);font-size:22px;color:var(--dim);transition:.2s}
+.faq.open .faqx{transform:rotate(45deg);color:var(--acc)}
+.faqa{max-height:0;overflow:hidden;transition:max-height .32s ease,opacity .3s;opacity:0}
+.faq.open .faqa{max-height:220px;opacity:1}
+.faqa p{margin:0;padding:0 8px 28px 47px;font-size:16px;line-height:1.6;color:var(--dim);max-width:720px}
+/* cta */
+.cta{position:relative;border:1px solid var(--line);border-radius:18px;background:linear-gradient(135deg,var(--surf),#0c0d10);padding:66px 56px;overflow:hidden;text-align:center}
+.cta::after{content:"";position:absolute;inset:-1px;border-radius:18px;background:radial-gradient(600px 200px at 50% 0,color-mix(in srgb,var(--acc) 22%,transparent),transparent);pointer-events:none}
+.cta .h2{position:relative;z-index:1}
+/* footer */
+.ft{border-top:1px solid var(--line);margin-top:96px;padding:52px 0 60px}
+.ftin{display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:30px}
+.ftlinks{display:flex;gap:26px;flex-wrap:wrap}
+.ftlinks a{font-size:14px;color:var(--dim)}.ftlinks a:hover{color:var(--txt)}
+.disc{display:inline-flex;align-items:center;gap:9px;background:#5865F2;color:#fff;font-weight:700;font-size:14px;padding:11px 20px;border-radius:10px}
+.disc:hover{color:#fff;filter:brightness(1.08)}
+.ftlaw{font-family:var(--mono);font-size:12px;color:var(--dim);letter-spacing:.04em;margin-top:30px}
+@media(max-width:900px){.hero{grid-template-columns:1fr;gap:40px}.stats,.how{grid-template-columns:1fr}.frow{grid-template-columns:1.4fr .8fr .9fr;font-size:13px}.frow .hidem{display:none}}
+</style></helmet><div class="app {{ motionCls }}" ref="{{ rootRef }}"><div class="crt {{ scanCls }}"></div><header class="hd"><div class="wrap hdin"><div class="logo">GEO<b>STAKES</b></div><nav class="nav"><sc-if value="{{ loggedOut }}" hint-placeholder-val="{{ true }}"><button class="login" onClick="{{ login }}">Login</button></sc-if><sc-if value="{{ loggedIn }}"><div class="acct"><div class="wallet"><span class="coin">$</span><div class="wcol"><span class="wlbl">Balance</span><span class="wval">{{ balance }}</span></div></div><a class="btnsm dep" href="Deposit.dc.html" style="text-decoration:none;color:#06180d;display:inline-block">Deposit</a><a class="btnsm wd" href="Withdraw.dc.html" style="text-decoration:none;color:var(--txt);display:inline-block">Withdraw</a><div class="avwrap"><button class="avbtn" onClick="{{ toggleMenu }}"><span class="pdot" style="width:7px;height:7px"></span>Profile</button><div class="menu {{ menuCls }}"><div class="mhead"><div class="mname">{{ username }}</div><div class="msub">{{ balance }} available</div></div><a class="mi" href="Game History.dc.html" style="text-decoration:none">🎯 Game history</a><div class="midiv"></div><div class="mi out" onClick="{{ logout }}">↩ Log out</div></div></div></div></sc-if></nav></div></header><div class="mq"><div class="mqtrack"><span>🎁 100% match on your first deposit <b>//</b></span><span>{{ roundsStr }} rounds played <b>//</b></span><span>{{ paidStr }} paid out <b>//</b></span><span>instant cash-out <b>//</b></span><span>no rake · no fees <b>//</b></span><span>🎁 100% match on your first deposit <b>//</b></span><span>{{ roundsStr }} rounds played <b>//</b></span><span>{{ paidStr }} paid out <b>//</b></span><span>instant cash-out <b>//</b></span><span>no rake · no fees <b>//</b></span></div></div><section class="wrap hero"><div><div class="badge"><span class="pdot"></span>{{ roundsStr }} rounds played on Geostakes</div><h1 class="h1">Guess where<br>you are.<br><span class="g">Win money.</span></h1><p class="sub">Real-money skill betting on GeoGuessr. Drop your pin, and the closer you land, the bigger your payout.</p><div class="chips"><sc-for list="{{ chips }}" as="c" hint-placeholder-count="3"><button class="chip {{ c.cls }}" onClick="{{ c.pick }}">{{ c.label }}</button></sc-for><span class="chipcustom"><span class="cc-cur">$</span><input class="chipin {{ customCls }}" type="text" inputmode="decimal" placeholder="Custom" value="{{ customStr }}" onInput="{{ setCustom }}"></span></div><button class="play" onClick="{{ play }}">{{ playLabel }}</button><div class="trust"><span>⚡ <b>Instant</b> payouts</span><span>🔒 <b>18+</b> where legal</span><span>🎯 <b>No repeats</b>, ever</span></div></div><div class="console"><div class="chud"><span class="lbl">Solo mode · {{ secsStr }} left</span><span class="live"><span class="pdot"></span>LIVE</span></div><div class="screen"><x-import component-from-global-scope="image-slot" from="./image-slot.js" id="hero-street" shape="rect" placeholder="Drop a Street View screenshot" hint-size="100%,100%"></x-import><div class="timepill">{{ secsStr }}</div><div class="br tl"></div><div class="br tr"></div><div class="br bl"></div><div class="br brr"></div><div class="cross"></div></div><div class="meter"><div class="meterf"></div></div><div class="cfoot"><div class="stakeg"><span class="lbl">Stake</span><span class="stakev">$50.00</span></div><div class="stakeg" style="text-align:right"><span class="lbl">Potential</span><span class="multi">3.4×</span></div></div></div></section><section class="wrap"><div class="stats"><div class="stat"><div class="lbl">Paid out, all time</div><div class="statv">{{ paidStr }}</div></div><div class="stat"><div class="lbl">Total players</div><div class="statv">{{ playersStr }}</div></div><div class="stat"><div class="lbl">How it works</div><div class="workh">Guess the location. <span class="g">Earn multipliers on accuracy.</span></div></div></div></section><section class="wrap sec" id="how"><div class="eyebrow"><i>02 · The floor</i><em></em></div><h2 class="h2">How it works</h2><p class="lede">Guess the location. Earn multipliers on accuracy. Cash out the second the round ends.</p><div class="how"><sc-for list="{{ steps }}" as="s" hint-placeholder-count="3"><div class="step"><div class="stepn">{{ s.n }}</div><div class="steph">{{ s.h }}</div><div class="stepp">{{ s.p }}</div><div class="stepbar"></div></div></sc-for></div></section><section class="wrap sec" id="rounds"><div class="eyebrow"><i>03 · The tape</i><em></em></div><h2 class="h2">Recent rounds</h2><p class="lede">Every round below paid out real cash based on guess accuracy.</p><div class="feedwrap"><div class="frow fhead"><div class="fc">Player</div><div class="fc hidem">Stake</div><div class="fc">Distance</div><div class="fc">Payout</div><div class="fc hidem">Time</div></div><sc-for list="{{ feed }}" as="f" hint-placeholder-count="10"><div class="frow {{ f.rowCls }}"><div class="player"><span class="av" style="{{ f.avStyle }}">{{ f.initials }}</span><span class="pn">{{ f.name }}</span></div><div class="fc hidem">{{ f.stake }}</div><div class="fc">{{ f.dist }}</div><div class="fc {{ f.payCls }}">{{ f.pay }}</div><div class="fc dim hidem">{{ f.t }} ago</div></div></sc-for></div></section><section class="wrap sec" id="faq"><div class="eyebrow"><i>04 · Questions</i><em></em></div><h2 class="h2">FAQ</h2><p class="lede">Five things people always ask before their first stake.</p><div class="faqlist"><sc-for list="{{ faqs }}" as="q" hint-placeholder-count="5"><div class="faq {{ q.cls }}" onClick="{{ q.toggle }}"><div class="faqq"><span class="faqn">{{ q.n }}</span><span class="faqt">{{ q.q }}</span><span class="faqx">+</span></div><div class="faqa"><p>{{ q.a }}</p></div></div></sc-for></div></section><section class="wrap"><div class="cta"><div class="eyebrow" style="justify-content:center"><i style="letter-spacing:.2em">Ready?</i></div><h2 class="h2">Your first round<br>is on the house.</h2><p class="lede" style="margin:20px auto 30px">We match your first deposit 100%. No rake, no fees, no catch.</p><button class="play" style="max-width:340px;margin:0 auto;display:block">Claim & play →</button></div></section><footer class="ft"><div class="wrap"><div class="ftin"><div><div class="logo" style="font-size:24px">GEO<b>STAKES</b></div><div class="ftlaw">© 2026 Geostakes · Play responsibly · 18+ where legal</div></div><div class="col" style="align-items:flex-end;gap:18px"><a class="disc" href="https://discord.gg/your-discord-invite">💬 Join Discord</a><div class="ftlinks"><a href="#">Terms</a><a href="#">Privacy</a><a href="#">Responsible play</a><a href="#">Status</a></div></div></div></div></footer></div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;loggedIn&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;State&quot;},&quot;accent&quot;:{&quot;editor&quot;:&quot;color&quot;,&quot;default&quot;:&quot;#39ff6a&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;options&quot;:[&quot;#39ff6a&quot;,&quot;#ffc24d&quot;,&quot;#5ad1ff&quot;,&quot;#ff5c8a&quot;],&quot;section&quot;:&quot;Theme&quot;},&quot;scanlines&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Theme&quot;},&quot;reduceMotion&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Theme&quot;}}">
+class Component extends DCLogic {
+  state = { secs: 15, stake: 0, custom: '', openFaq: 0, paid: 0, players: 0, rounds: 0, loggedIn: null, menuOpen: false };
+  rootRef = React.createRef();
+  componentDidMount(){
+    this.applyAccent();
+    if(!this.props.reduceMotion){
+      this.timer = setInterval(()=>this.setState(s=>({ secs: s.secs>1 ? s.secs-1 : 25 })),1000);
+    }
+    this.countUp('paid',11154,1700);
+    this.countUp('players',145,1700);
+    this.countUp('rounds',937,1700);
+  }
+  componentDidUpdate(){ this.applyAccent(); }
+  componentWillUnmount(){ clearInterval(this.timer); }
+  applyAccent(){ const el=this.rootRef.current; if(el && this.props.accent) el.style.setProperty('--acc', this.props.accent); }
+  countUp(key,to,dur){
+    if(this.props.reduceMotion){ this.setState({[key]:to}); return; }
+    const start=performance.now();
+    const step=(t)=>{ const p=Math.min(1,(t-start)/dur); const v=Math.round(to*(1-Math.pow(1-p,3))); this.setState({[key]:v}); if(p<1) requestAnimationFrame(step); };
+    requestAnimationFrame(step);
+  }
+  renderVals(){
+    const money = n => '$'+n.toLocaleString('en-US');
+    const num = n => n.toLocaleString('en-US');
+    const stakes=[0.5,1];
+    const chips = stakes.map((v,i)=>({
+      label:'$'+v.toFixed(2), cls: (!this.state.custom && i===this.state.stake)?'on':'',
+      pick: ()=>this.setState({stake:i, custom:''})
+    }));
+    const customVal=parseFloat(this.state.custom)||0;
+    const activeStake = this.state.custom && customVal>0 ? customVal : stakes[this.state.stake];
+    const setCustom=(e)=>{ this.setState({custom:String(e.target.value).replace(/[^0-9.]/g,'')}); };
+    const steps=[
+      {n:'01',h:'Pick your stake',p:'$0.50 or $1.00 a round. No rake, no fees — every cent rides on your guess.'},
+      {n:'02',h:'Drop your pin',p:'25 seconds on the clock. Locations never repeat, so Google can\u2019t save you.'},
+      {n:'03',h:'Cash out instantly',p:'Payout scales with accuracy. Winnings hit your balance the moment the round ends.'}
+    ];
+    const avPalette=['#39ff6a','#ffc24d','#5ad1ff','#ff6b9d','#b98cff','#ff8a4d','#7cff9e','#ffd24d'];
+    const raw=[
+      {name:'joao_sp',stake:'$0.50',dist:'12km',pay:'$1.00',t:'44s',win:true},
+      {name:'atlas',stake:'$1.00',dist:'89km',pay:'$1.20',t:'1m',win:true},
+      {name:'MERIDIAN',stake:'$1.00',dist:'3km',pay:'$3.00',t:'2m',win:true,big:true},
+      {name:'lucas_bsb',stake:'$0.50',dist:'450km',pay:'$0.13',t:'3m',win:false},
+      {name:'tomato.png',stake:'$0.50',dist:'18km',pay:'$1.00',t:'4m',win:true},
+      {name:'PARALLEL',stake:'$1.00',dist:'67km',pay:'$1.20',t:'5m',win:true},
+      {name:'longitude',stake:'$1.00',dist:'145km',pay:'$0.75',t:'7m',win:false},
+      {name:'ana_curitiba',stake:'$0.50',dist:'8km',pay:'$1.00',t:'8m',win:true},
+      {name:'vex.04',stake:'$1.00',dist:'290km',pay:'$0.75',t:'9m',win:false},
+      {name:'kestrel',stake:'$0.50',dist:'1200km',pay:'$0.00',t:'11m',win:false,bust:true}
+    ];
+    const feed=raw.map((r,i)=>{
+      let payCls='pay-mid';
+      if(r.bust) payCls='pay-bust';
+      else if(r.big) payCls='pay-hot';
+      else if(r.win) payCls='pay-win';
+      const c=avPalette[i%avPalette.length];
+      return {...r, initials:r.name.replace(/[^a-z0-9]/gi,'').slice(0,2).toUpperCase(),
+        avStyle:'background:'+c, payCls, rowCls:r.big?'row-hot':''};
+    });
+    const faqRaw=[
+      {q:'How does the multiplier system work?',a:'The closer you guess, the higher your multiplier. Accuracy is rewarded \u2014 great guesses can multiply your stake significantly. Each round pays out instantly based on your distance from the target.'},
+      {q:'How do payouts work?',a:'Winnings hit your balance instantly after each round. Withdraw to bank, debit, or stablecoin in under a minute. Pull as much as you want, as often as you want \u2014 no holds on verified accounts.'},
+      {q:'What stops people from cheating?',a:'You can never play the same location twice, and a 25-second timer prevents Google lookup. These two layers make systematic cheating nearly impossible while keeping the game fast and fun.'},
+      {q:'How many rounds can I play?',a:'As many as you want, until you\u2019ve played all available locations. Each location can only be played once per account, forever. New locations are added regularly.'},
+      {q:'What does it cost?',a:'Nothing to sign up. You only pay your stake per round. No rake, no fees. Your payout is purely based on the multiplier you earn from your guess accuracy.'}
+    ];
+    const faqs=faqRaw.map((f,i)=>({
+      n:String(i+1).padStart(2,'0'), q:f.q, a:f.a,
+      cls: this.state.openFaq===i?'open':'',
+      toggle: ()=>this.setState(s=>({openFaq: s.openFaq===i?-1:i}))
+    }));
+    const loggedIn = this.state.loggedIn ?? (this.props.loggedIn ?? true);
+    return {
+      loggedIn, loggedOut: !loggedIn,
+      username: 'vex.04', balance: '$128.40', initials: 'VE',
+      menuCls: this.state.menuOpen ? '' : 'hide',
+      login: ()=>this.setState({loggedIn:true}),
+      logout: ()=>this.setState({loggedIn:false, menuOpen:false}),
+      toggleMenu: ()=>this.setState(s=>({menuOpen:!s.menuOpen})),
+      noop: ()=>{},
+      motionCls: this.props.reduceMotion?'still':'',
+      scanCls: this.props.scanlines===false?'off':'',
+      secsStr: this.state.secs+'S',
+      paidStr: money(this.state.paid),
+      playersStr: num(this.state.players),
+      roundsStr: num(this.state.rounds),
+      playLabel: 'Play · $'+activeStake.toFixed(2)+' per round →',
+      customStr: this.state.custom, customCls: (this.state.custom && customVal>0)?'on':'', setCustom,
+      chips, steps, feed, faqs,
+      play: ()=>{}
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet data-dc-atomics><meta name="viewport" content="width=device-width, initial-scale=1"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Saira+Condensed:ital,wght@0,700;0,800;0,900;1,800;1,900&family=Space+Grotesk:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet"><style>
+:root{--bg:#08090a;--surf:#111114;--surf2:#191a1f;--line:#26272e;--acc:#39ff6a;--accd:#1c7a3a;--gold:#ffc24d;--txt:#f4f5f2;--dim:#8b8c95;--mono:'Space Mono',monospace;--disp:'Saira Condensed',sans-serif;--ui:'Space Grotesk',system-ui,sans-serif}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--txt);font-family:var(--ui);-webkit-font-smoothing:antialiased}
+.app{position:relative;min-height:100vh}
+.app::before{content:"";position:fixed;inset:0;background-image:radial-gradient(rgba(255,255,255,.035) 1px,transparent 1px);background-size:22px 22px;pointer-events:none;z-index:0}
+a{color:var(--acc);text-decoration:none}a:hover{color:var(--txt)}
+.wrap{max-width:1240px;margin:0 auto;padding:0 32px;position:relative;z-index:1}
+.lbl{font-family:var(--mono);font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--dim)}
+.mono{font-family:var(--mono)}.dim{color:var(--dim)}
+/* header */
+.hd{position:sticky;top:0;z-index:40;background:rgba(8,9,10,.82);backdrop-filter:blur(14px);border-bottom:1px solid var(--line)}
+.hdin{height:76px;display:flex;align-items:center;justify-content:space-between}
+.logo{font-family:var(--disp);font-style:italic;font-weight:900;font-size:28px;letter-spacing:-.01em;color:var(--txt)}
+.logo b{color:var(--acc)}
+.back{display:inline-flex;align-items:center;gap:8px;font-size:13px;font-weight:600;color:var(--dim);margin-left:28px}
+.back:hover{color:var(--txt)}
+.hleft{display:flex;align-items:center}
+.hright{display:flex;align-items:center;gap:16px}
+.bal{display:flex;flex-direction:column;gap:3px;line-height:1;text-align:right}
+.balv{font-family:var(--disp);font-style:italic;font-weight:900;font-size:22px;color:var(--acc)}
+.avbtn{width:40px;height:40px;background:var(--surf2);border:1px solid var(--line);color:var(--txt);font-family:var(--disp);font-style:italic;font-weight:900;font-size:15px;display:flex;align-items:center;justify-content:center}
+/* column */
+.col1{max-width:760px;margin:0 auto;padding:44px 32px 70px;position:relative;z-index:1}
+.h1{font-family:var(--disp);font-style:italic;font-weight:900;font-size:clamp(44px,6vw,64px);line-height:.9;letter-spacing:-.015em;text-transform:uppercase;margin:0}
+.tchips{display:flex;gap:18px;margin:16px 0 30px;font-family:var(--mono);font-size:11px;letter-spacing:.06em;color:var(--dim);text-transform:uppercase;flex-wrap:wrap}
+.tchips b{color:var(--txt)}
+.ticker{display:flex;align-items:center;gap:16px;background:var(--surf);border:1px solid var(--line);padding:12px 16px;margin:0 0 26px;overflow:hidden}
+.ticker .pdot{width:8px;height:8px;flex:none;border-radius:50%;background:var(--acc);box-shadow:0 0 10px var(--acc);animation:pulse 1.6s infinite}
+.ticker .tk-lbl{font-family:var(--mono);font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--dim);white-space:nowrap;flex:none}
+.tk-view{flex:1;overflow:hidden;position:relative;mask-image:linear-gradient(90deg,transparent,#000 6%,#000 94%,transparent)}
+.tk-track{display:flex;gap:10px;width:max-content;animation:tkscroll 16s linear infinite}
+@keyframes tkscroll{to{transform:translateX(-50%)}}
+.tk-item{display:flex;align-items:center;gap:9px;white-space:nowrap;background:var(--surf2);border:1px solid var(--line);padding:7px 13px 7px 8px}
+.tk-item .tkav{width:26px;height:26px;flex:none;display:flex;align-items:center;justify-content:center;font-family:var(--disp);font-style:italic;font-weight:900;font-size:11px;color:#06180d}
+.tk-item b{font-weight:600;font-size:13px}
+.tk-item .tka{font-family:var(--disp);font-style:italic;font-weight:900;font-size:15px;color:var(--acc);margin-left:2px}
+.panel{background:var(--surf);border:1px solid var(--line);padding:26px 28px;margin-bottom:18px}
+.steplbl{font-family:var(--mono);font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--acc);margin-bottom:4px}
+.ph{font-family:var(--disp);font-style:italic;font-weight:800;font-size:24px;text-transform:uppercase;margin:0 0 18px}
+/* amount */
+.amts{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.amt{font-family:var(--disp);font-style:italic;font-weight:900;font-size:25px;padding:18px 0;text-align:center;background:var(--surf2);color:var(--txt);border:1px solid var(--line);cursor:pointer;box-shadow:0 4px 0 #000;transition:transform .08s,border-color .12s}
+.amt:hover{border-color:var(--dim)}
+.amt:active{transform:translateY(3px);box-shadow:0 1px 0 #000}
+.amt.on{background:var(--acc);color:#06180d;border-color:var(--acc);box-shadow:0 4px 0 var(--accd)}
+.amt.on:active{box-shadow:0 1px 0 var(--accd)}
+.customwrap{margin-top:12px;position:relative}
+.cur{position:absolute;left:16px;top:50%;transform:translateY(-50%);font-family:var(--disp);font-style:italic;font-weight:900;font-size:19px;color:var(--dim);pointer-events:none}
+.custom{width:100%;background:var(--surf2);border:1px solid var(--line);color:var(--txt);font-family:var(--disp);font-style:italic;font-weight:900;font-size:19px;padding:14px 16px 14px 34px}
+.custom:focus{outline:none;border-color:var(--acc)}
+.custom::placeholder{color:var(--dim)}
+.bonus{margin-top:16px;background:linear-gradient(135deg,rgba(57,255,106,.09),rgba(255,194,77,.06));border:1px solid color-mix(in srgb,var(--acc) 30%,var(--line));padding:14px 16px}
+.bonustop{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.bonustag{font-family:var(--disp);font-style:italic;font-weight:800;font-size:15px;text-transform:uppercase}
+.bonusval{font-family:var(--disp);font-style:italic;font-weight:900;font-size:19px;color:var(--acc)}
+.track{height:8px;background:var(--surf2);border-radius:4px;overflow:hidden}
+.trackf{height:100%;background:linear-gradient(90deg,var(--gold),var(--acc));transition:width .3s}
+.bonusmsg{font-family:var(--mono);font-size:11px;color:var(--dim);margin-top:9px}
+/* method radio rows */
+.opt{display:flex;align-items:center;gap:16px;padding:18px;background:var(--surf2);border:1px solid var(--line);cursor:pointer;transition:border-color .12s}
+.opt + .opt,.opt + .optx{margin-top:12px}
+.optx + .opt{margin-top:12px}
+.opt:hover{border-color:var(--dim)}
+.opt.on{border-color:var(--acc);background:color-mix(in srgb,var(--acc) 6%,var(--surf2))}
+.radio{width:20px;height:20px;flex:none;border-radius:50%;border:2px solid var(--line);display:flex;align-items:center;justify-content:center}
+.opt.on .radio{border-color:var(--acc)}
+.radio i{width:10px;height:10px;border-radius:50%;background:transparent}
+.opt.on .radio i{background:var(--acc)}
+.oicon{width:42px;height:42px;flex:none;display:flex;align-items:center;justify-content:center;font-size:21px;background:var(--bg);border:1px solid var(--line)}
+.obody{flex:1;min-width:0}
+.otitle{font-family:var(--disp);font-style:italic;font-weight:800;font-size:19px;text-transform:uppercase;line-height:1;display:flex;align-items:center;gap:10px}
+.pop{font-family:var(--mono);font-style:normal;font-size:9px;letter-spacing:.12em;color:#06180d;background:var(--acc);padding:3px 7px}
+.osub{font-family:var(--mono);font-size:11px;color:var(--dim);letter-spacing:.03em;margin-top:6px}
+.obadges{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+.brand{font-family:var(--ui);font-weight:800;font-size:10px;letter-spacing:.04em;color:var(--dim);border:1px solid var(--line);padding:3px 6px;background:var(--bg);white-space:nowrap}
+/* crypto expansion */
+.optx{border:1px solid var(--line);border-top:none;background:var(--surf2);padding:18px;margin-top:0!important}
+.netchips{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+.net{font-family:var(--ui);font-weight:600;font-size:13px;padding:8px 15px;background:var(--bg);border:1px solid var(--line);cursor:pointer;color:var(--txt)}
+.net.on{border-color:var(--acc);color:var(--acc)}
+.wcard{border:1px solid color-mix(in srgb,var(--acc) 35%,var(--line));background:color-mix(in srgb,var(--acc) 6%,var(--bg));padding:14px 16px;display:flex;align-items:center;gap:12px}
+.pdot{width:8px;height:8px;flex:none;border-radius:50%;background:var(--acc);box-shadow:0 0 10px var(--acc);animation:pulse 1.6s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+.wmeta{flex:1;min-width:0}
+.wname{font-weight:700;font-size:14px}
+.waddr{font-family:var(--mono);font-size:11px;color:var(--dim);margin-top:3px}
+.wbal{font-family:var(--mono);font-size:13px;color:var(--acc);font-weight:700}
+.wdisc{font-family:var(--mono);font-size:11px;color:#ff6b6b;cursor:pointer;margin-left:10px}
+.wnote{display:flex;align-items:center;gap:10px;color:var(--dim);font-size:13px}
+.wnote .wallets{display:flex;gap:6px;flex-wrap:wrap}
+.wallets span{font-family:var(--mono);font-size:10px;color:var(--dim);border:1px solid var(--line);border-radius:5px;padding:4px 8px;background:var(--bg)}
+/* pay */
+.sumline{display:flex;border:1px solid var(--line);background:var(--surf2);margin-bottom:16px}
+.sumc{flex:1;padding:14px 18px;border-right:1px solid var(--line)}
+.sumc:last-child{border-right:none}
+.sumv{font-family:var(--disp);font-style:italic;font-weight:900;font-size:23px;margin-top:4px}
+.sumv.g{color:var(--acc)}
+.cta{width:100%;font-family:var(--disp);font-style:italic;font-weight:900;font-size:23px;text-transform:uppercase;padding:20px;background:var(--acc);color:#06180d;border:none;cursor:pointer;box-shadow:0 6px 0 var(--accd);transition:transform .08s,filter .12s}
+.cta:hover{filter:brightness(1.08)}
+.cta:active{transform:translateY(4px);box-shadow:0 2px 0 var(--accd)}
+.cta:disabled{background:var(--surf2);color:var(--dim);box-shadow:0 6px 0 #000;cursor:not-allowed}
+.cta.busy{background:var(--gold);box-shadow:0 6px 0 #8a6420}
+.ctasub{font-family:var(--mono);font-size:11px;color:var(--dim);text-align:center;margin-top:12px;line-height:1.7;letter-spacing:.02em}
+.stripe-wm{color:#a5a0ff;font-weight:700;font-family:var(--ui)}
+.trust{margin-top:18px;display:flex;flex-direction:column;gap:9px;border-top:1px solid var(--line);padding-top:16px}
+.tr{display:flex;align-items:center;gap:10px;font-size:13px;color:#c8c9cf}
+.tr .ck{color:var(--acc);font-weight:700}
+/* social */
+.social{margin-top:8px}
+.sh{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.deps{display:flex;flex-direction:column;gap:8px}
+.dep{display:flex;align-items:center;gap:12px;background:var(--surf);border:1px solid var(--line);padding:11px 14px}
+.dav{width:30px;height:30px;flex:none;display:flex;align-items:center;justify-content:center;font-family:var(--disp);font-style:italic;font-weight:900;font-size:13px;color:#06180d}
+.depn{font-weight:600;font-size:13px}
+.dept{font-family:var(--mono);font-size:10px;color:var(--dim);margin-top:2px}
+.depa{margin-left:auto;font-family:var(--disp);font-style:italic;font-weight:900;font-size:17px;color:var(--acc)}
+.foot{padding:26px 0 40px;font-family:var(--mono);font-size:11px;color:var(--dim);letter-spacing:.03em;text-align:center;line-height:1.8}
+@media(max-width:560px){.amts{grid-template-columns:repeat(2,1fr)}.obadges{display:none}.sumline{flex-direction:column}.sumc{border-right:none;border-bottom:1px solid var(--line)}}
+.wallet{display:flex;align-items:center;gap:10px;height:40px;background:var(--surf2);border:1px solid var(--line);padding:0 16px 0 7px}
+.coin{width:26px;height:26px;flex:none;display:flex;align-items:center;justify-content:center;font-family:var(--disp);font-style:italic;font-weight:900;font-size:17px;color:#3a2600;background:linear-gradient(140deg,#ffe08a,var(--gold) 45%,#d98a1a);border-radius:50%;box-shadow:0 0 12px -3px var(--gold),inset 0 1px 0 rgba(255,255,255,.5)}
+.wcol{display:flex;flex-direction:column;line-height:1;gap:4px}
+.wlbl{font-family:var(--mono);font-size:8px;letter-spacing:.16em;text-transform:uppercase;color:var(--dim)}
+.wval{font-family:var(--disp);font-style:italic;font-weight:900;font-size:19px;color:var(--acc)}
+</style></helmet><div class="app"><header class="hd"><div class="wrap hdin"><div class="hleft"><a href="Geostakes Landing.dc.html" class="logo">GEO<b>STAKES</b></a></div><div class="hright"><div class="wallet"><span class="coin">$</span><div class="wcol"><span class="wlbl">Balance</span><span class="wval">$128.40</span></div></div><div class="avbtn">VE</div></div></div></header><div class="col1"><h1 class="h1">Add funds</h1><div class="tchips"><span>⚡ <b>Instant</b> credit</span><span>💸 <b>$0</b> deposit fees</span><span>🔓 <b>No holds</b> on withdrawals</span></div><div class="ticker"><span class="pdot"></span><span class="tk-lbl">Latest deposits</span><div class="tk-view"><div class="tk-track"><sc-for list="{{ ticker }}" as="d" hint-placeholder-count="8"><span class="tk-item"><span class="tkav" style="{{ d.avStyle }}">{{ d.initials }}</span><b>{{ d.name }}</b><span class="tka">{{ d.amt }}</span></span></sc-for></div></div></div><div class="panel"><div class="steplbl">Step 01</div><div class="ph">Amount</div><div class="customwrap" style="margin:0 0 16px"><span class="cur">$</span><input class="custom" type="text" inputmode="numeric" placeholder="Enter amount" value="{{ amountStr }}" onChange="{{ setCustom }}" onInput="{{ setCustom }}"></div><div class="lbl" style="margin-bottom:10px">Quick amounts</div><div class="amts"><sc-for list="{{ amts }}" as="a" hint-placeholder-count="4"><button class="amt {{ a.cls }}" onClick="{{ a.pick }}">{{ a.label }}</button></sc-for></div><div class="bonus"><div class="bonustop"><span class="bonustag">🎁 100% first-deposit match</span><span class="bonusval">{{ bonusStr }}</span></div><div class="bonusmsg">{{ bonusMsg }}</div></div></div><div class="panel"><div class="steplbl">Step 02</div><div class="ph">How do you want to pay?</div><div class="opt {{ cardCls }}" onClick="{{ pickCard }}"><span class="radio"><i></i></span><span class="oicon">💳</span><div class="obody"><div class="otitle">Card<span class="pop">Most popular</span></div><div class="osub">Instant · secure checkout by Stripe</div></div></div><div class="opt {{ cryptoCls }}" onClick="{{ pickCrypto }}"><span class="radio"><i></i></span><span class="oicon"><svg width="22" height="18" viewBox="0 0 24 20"><linearGradient id="sg" x1="0" y1="20" x2="24" y2="0" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#9945FF"></stop><stop offset="1" stop-color="#14F195"></stop></linearGradient><path fill="url(#sg)" d="M4 0h20l-4 5H0zM0 7.5h20l4 5H4zM4 15h20l-4 5H0z"></path></svg></span><div class="obody"><div class="otitle">Crypto · SOL</div><div class="osub">Instant · connect your wallet via WalletConnect</div></div></div><sc-if value="{{ showWallet }}" hint-placeholder-val="{{ false }}"><div class="optx"><div class="wcard"><span class="pdot"></span><div class="wmeta"><div class="wname">Wallet connected</div><div class="waddr">{{ walletAddr }}</div></div><span class="wbal">{{ walletBal }}</span><span class="wdisc" onClick="{{ disconnect }}">Disconnect</span></div></div></sc-if></div><div class="panel"><div class="steplbl">Step 03</div><div class="ph">Confirm & pay</div><div class="sumline"><div class="sumc"><div class="lbl">Deposit</div><div class="sumv">{{ depositStr }}</div></div><div class="sumc"><div class="lbl">Bonus</div><div class="sumv g">{{ bonusPlus }}</div></div><div class="sumc"><div class="lbl" style="white-space:nowrap">You receive</div><div class="sumv g">{{ totalStr }}</div></div></div><button class="cta {{ ctaBusyCls }}" disabled="{{ ctaDisabled }}" onClick="{{ ctaClick }}">{{ ctaLabel }}</button><div class="ctasub">{{ ctaSubA }} <span class="stripe-wm">{{ ctaSubBrand }}</span> {{ ctaSubB }}</div><div class="trust"><div class="tr"><span class="ck">✓</span>Withdraw anytime — no holds on verified accounts</div><div class="tr"><span class="ck">✓</span>Licensed & regulated · 18+, play responsibly</div><div class="tr"><span class="ck">✓</span>256-bit SSL · we never see your card or keys</div></div></div><footer class="foot">© 2026 Geostakes · Play responsibly · 18+ where legal<br>Gambling can be addictive. If you need help, call 1-800-522-4700.</footer></div></div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{}">
+class Component extends DCLogic {
+  state = { amount: 50, method: 'card', network: 0, walletConnected: false, busy: false };
+  componentWillUnmount(){ clearTimeout(this.busyT); }
+  renderVals(){
+    const presets=[10,25,50,100];
+    const amount=this.state.amount;
+    const money=n=>'$'+Number(n).toFixed(2);
+    const amts=presets.map(v=>({label:'$'+v, cls: amount===v?'on':'', pick:()=>this.setState({amount:v})}));
+    const setCustom=(e)=>{ const v=parseInt(String(e.target.value).replace(/\D/g,''))||0; this.setState({amount:v}); };
+    const bonus=Math.max(amount,0);
+    const bonusMsg = amount>=10
+      ? 'We match your first deposit 100% — '+money(amount)+' in, '+money(amount*2)+' to play with.'
+      : 'Deposit at least $10 to claim your match.';
+    const nets=[{name:'Ethereum',token:'USDC (ERC-20)'},{name:'Solana',token:'USDC (SPL)'},{name:'Polygon',token:'USDC (Polygon)'}];
+    const ni=this.state.network;
+    const netChips=nets.map((n,i)=>({name:n.name, cls:i===ni?'on':'', pick:()=>this.setState({network:i})}));
+    const isCrypto=this.state.method==='crypto';
+    const wc=this.state.walletConnected;
+    const busy=this.state.busy;
+    const startBusy=()=>{ this.setState({busy:true}); clearTimeout(this.busyT); this.busyT=setTimeout(()=>this.setState({busy:false}),2200); };
+    let ctaLabel, ctaSubA='', ctaSubBrand='', ctaSubB='', ctaDisabled=false, ctaClick=()=>{};
+    if(amount<10){ ctaLabel='Enter at least $10'; ctaDisabled=true; ctaSubA='Minimum deposit is $10.'; }
+    else if(!isCrypto){
+      ctaLabel = busy ? 'Opening Stripe Checkout…' : 'Pay '+money(amount)+' with Stripe →';
+      ctaSubA='You\u2019ll finish in'; ctaSubBrand='Stripe\u2019s'; ctaSubB='secure checkout — cards, Apple Pay & Google Pay. We never see your card.';
+      ctaClick=startBusy;
+    } else if(!wc){
+      ctaLabel = busy ? 'Waiting for wallet…' : 'Connect wallet';
+      ctaSubA='Your wallet opens via WalletConnect — nothing moves until you approve.';
+      ctaClick=()=>{ this.setState({busy:true}); clearTimeout(this.busyT); this.busyT=setTimeout(()=>this.setState({busy:false, walletConnected:true}),900); };
+    } else {
+      ctaLabel = busy ? 'Awaiting approval in wallet…' : 'Approve '+money(amount)+' in wallet →';
+      ctaSubA='Your wallet will ask you to approve a SOL transfer worth '+money(amount)+'.';
+      ctaClick=startBusy;
+    }
+    const pal=['#39ff6a','#ffc24d','#5ad1ff','#ff6b9d'];
+    const rawRecent=[{name:'lucas_bsb',amt:'$25',t:'1m'},{name:'MERIDIAN',amt:'$100',t:'2m'},{name:'tomato.png',amt:'$10',t:'3m'},{name:'PARALLEL',amt:'$50',t:'5m'}];
+    const recent=rawRecent.map((d,i)=>({...d, initials:d.name.replace(/[^a-z0-9]/gi,'').slice(0,2).toUpperCase(), avStyle:'background:'+pal[i%pal.length]}));
+    return {
+      amts, setCustom, amountStr: amount>0?String(amount):'',
+      bonusStr:'+'+money(bonus), bonusPlus:'+'+money(bonus), bonusMsg,
+      depositStr:money(amount), totalStr:money(amount+bonus),
+      cardCls:!isCrypto?'on':'', cryptoCls:isCrypto?'on':'', isCrypto,
+      pickCard:()=>this.setState({method:'card'}), pickCrypto:()=>this.setState({method:'crypto'}),
+      showWallet: isCrypto && wc,
+      disconnect:()=>this.setState({walletConnected:false}),
+      walletAddr:'8xKp…Qr2v', walletBal:'3.42 SOL',
+      ctaLabel, ctaDisabled, ctaClick, ctaSubA, ctaSubBrand, ctaSubB,
+      ctaBusyCls: busy?'busy':'',
+      recent, ticker: recent.concat(recent)
+    };
+  }
+}
+</script>
+</body>
+</html>
