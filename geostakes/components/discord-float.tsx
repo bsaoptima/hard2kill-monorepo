@@ -1,7 +1,7 @@
 export function DiscordFloat() {
   return (
     <a
-      href="https://discord.gg/your-discord-invite"
+      href="https://discord.gg/KUnbPaa4tk"
       target="_blank"
       rel="noopener noreferrer"
       className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-50 flex items-center gap-2 sm:gap-3 bg-[#5865F2] text-white px-3 py-2 sm:px-4 sm:py-3 shadow-lg hover:shadow-xl transition-all hover:brightness-110"

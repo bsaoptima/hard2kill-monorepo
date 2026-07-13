@@ -6,7 +6,6 @@ import { toast } from 'sonner'
 import styles from './arcade-withdraw.module.css'
 
 const QUICK_AMOUNTS = [25, 50, 100]
-const MIN_WITHDRAWAL = 10
 
 type RecentPayout = {
   name: string
@@ -55,7 +54,7 @@ export function ArcadeWithdraw({ cash, bonus }: { cash: number; bonus: number })
     setAmount(num)
   }
 
-  const isValid = amount >= MIN_WITHDRAWAL && amount <= balance
+  const isValid = amount > 0 && amount <= balance
   const isOver = amount > balance
 
   function isDestinationValid(): boolean {
@@ -117,8 +116,8 @@ export function ArcadeWithdraw({ cash, bonus }: { cash: number; bonus: number })
 
   const ctaLabel = submitting
     ? method === 'bank' ? "Submitting request…" : "Connecting wallet…"
-    : amount < MIN_WITHDRAWAL
-    ? `Enter at least $${MIN_WITHDRAWAL}`
+    : amount <= 0
+    ? "Enter an amount"
     : isOver
     ? "Amount exceeds balance"
     : !isDestinationValid()
