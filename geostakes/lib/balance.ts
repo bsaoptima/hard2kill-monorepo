@@ -8,6 +8,7 @@ export interface Balance {
   cash: number;
   bonus: number;
   total: number;
+  welcomeRoundsPlayed: number;
 }
 
 export interface DeductResult {
@@ -27,17 +28,19 @@ export async function getBalance(userId: string): Promise<Balance> {
   const supabase = createAdminClient();
   const { data } = await supabase
     .from("balances")
-    .select("balance, bonus")
+    .select("balance, bonus, welcome_rounds_played")
     .eq("id", userId)
     .maybeSingle();
 
   const cash = Number(data?.balance ?? 0);
   const bonus = Number(data?.bonus ?? 0);
+  const welcomeRoundsPlayed = Number(data?.welcome_rounds_played ?? 0);
 
   return {
     cash,
     bonus,
-    total: cash + bonus
+    total: cash + bonus,
+    welcomeRoundsPlayed,
   };
 }
 
@@ -160,6 +163,62 @@ export async function deductBalance(
       .update({
         balance: 0,
         bonus: balance.bonus - bonusDeducted
+      })
+      .eq("id", userId);
+  }
+
+  return {
+    success: true,
+    cash_deducted: cashDeducted,
+    bonus_deducted: bonusDeducted
+  };
+}
+
+/**
+ * Deduct from user balance (bonus first, then cash if needed)
+ * Used for welcome mode so free rounds use the free credit
+ */
+export async function deductBonusFirst(
+  userId: string,
+  amount: number,
+): Promise<DeductResult> {
+  const supabase = createAdminClient();
+
+  const balance = await getBalance(userId);
+
+  // Check if user has enough total balance
+  if (balance.total < amount) {
+    return {
+      success: false,
+      cash_deducted: 0,
+      bonus_deducted: 0
+    };
+  }
+
+  let cashDeducted = 0;
+  let bonusDeducted = 0;
+
+  // Deduct from bonus first
+  if (balance.bonus >= amount) {
+    // Sufficient bonus, deduct entirely from bonus
+    bonusDeducted = amount;
+    cashDeducted = 0;
+
+    await supabase
+      .from("balances")
+      .update({ bonus: balance.bonus - amount })
+      .eq("id", userId);
+
+  } else {
+    // Insufficient bonus, deduct all bonus + remaining from cash
+    bonusDeducted = balance.bonus;
+    cashDeducted = amount - balance.bonus;
+
+    await supabase
+      .from("balances")
+      .update({
+        bonus: 0,
+        balance: balance.cash - cashDeducted
       })
       .eq("id", userId);
   }

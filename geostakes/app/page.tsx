@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { DepositSuccessToast } from "@/components/deposit-success-toast";
 import { DiscordFloat } from "@/components/discord-float";
 import { ArcadeHero } from "@/components/arcade-hero";
+import { WelcomeModal } from "@/components/welcome-modal";
 
 
 const GRID_MATCHES = [
@@ -584,6 +585,7 @@ export default function Home() {
       <Suspense fallback={null}>
         <DepositSuccessToast />
       </Suspense>
+      <WelcomeModal />
       <div className="landing-root">
         <Hero />
         <LiveGames />

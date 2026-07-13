@@ -22,7 +22,6 @@ export default async function WithdrawPage() {
     .maybeSingle();
   const cash = Number(balanceRow?.balance ?? 0);
   const bonus = Number(balanceRow?.bonus ?? 0);
-  const balance = cash;  // Only cash can be withdrawn, not bonus
 
-  return <ArcadeWithdraw balance={balance} />;
+  return <ArcadeWithdraw cash={cash} bonus={bonus} />;
 }

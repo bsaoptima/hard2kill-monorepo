@@ -15,7 +15,9 @@ type RecentPayout = {
   color: string
 }
 
-export function ArcadeWithdraw({ balance }: { balance: number }) {
+export function ArcadeWithdraw({ cash, bonus }: { cash: number; bonus: number }) {
+  const balance = cash; // Only cash can be withdrawn
+  const total = cash + bonus;
   const router = useRouter()
   const [amount, setAmount] = useState<number>(0)
   const [customInput, setCustomInput] = useState<string>("")
@@ -184,9 +186,22 @@ export function ArcadeWithdraw({ balance }: { balance: number }) {
           <div className={styles.lbl}>Available to withdraw</div>
           <div className={styles.availv}>${balance.toFixed(2)}</div>
         </div>
-        <div className={styles.availnote}>
-          Bonus funds must be wagered before they can be cashed out.
-        </div>
+        {bonus > 0 && (
+          <div className={styles.breakdown}>
+            <div className={styles.breakdownRow}>
+              <span>Total balance</span>
+              <span>${total.toFixed(2)}</span>
+            </div>
+            <div className={styles.breakdownRow}>
+              <span>Bonus (play to unlock)</span>
+              <span>−${bonus.toFixed(2)}</span>
+            </div>
+            <div className={`${styles.breakdownRow} ${styles.breakdownTotal}`}>
+              <span>Withdrawable</span>
+              <span>${cash.toFixed(2)}</span>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Step 01: Amount */}

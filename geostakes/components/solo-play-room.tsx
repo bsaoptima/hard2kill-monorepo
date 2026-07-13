@@ -7,6 +7,7 @@ import { createClient } from "@/lib/supabase/client";
 import { StreetViewCoords } from "@/components/match/street-view-coords";
 import { GuessMap } from "@/components/match/guess-map";
 import { ResultMap } from "@/components/match/result-map";
+import { WelcomeCompleteModal } from "@/components/welcome-complete-modal";
 
 const ROUND_DURATION_SEC = 25;
 const INTRO_DURATION_MS = 2500;
@@ -16,6 +17,8 @@ type Location = {
   lat: number;
   lng: number;
   label: string;
+  inWelcomeMode?: boolean;
+  welcomeRoundsRemaining?: number;
 };
 
 type RoundResult = {
@@ -25,6 +28,7 @@ type RoundResult = {
   profitLoss: number;
   actualLocation: { lat: number; lng: number };
   balance: { cash: number; bonus: number; total: number };
+  welcomeRoundsRemaining?: number;
 };
 
 type Phase = "intro" | "playing" | "result";
@@ -199,13 +203,17 @@ export function SoloPlayRoom() {
   }
 
   if (phase === "playing" && location) {
+    // In welcome mode, always use $1 stake
+    const effectiveStake = location.inWelcomeMode ? 1 : stake;
     return (
       <PlayingScreen
         location={location}
         timeLeft={timeLeft}
         onSubmitGuess={submitGuess}
         balance={balance}
-        stake={stake}
+        stake={effectiveStake}
+        inWelcomeMode={location.inWelcomeMode}
+        welcomeRoundsRemaining={location.welcomeRoundsRemaining}
       />
     );
   }
@@ -222,10 +230,11 @@ export function SoloPlayRoom() {
         <ResultScreen
           result={result}
           location={location}
-          stake={stake}
+          stake={location.inWelcomeMode ? 1 : stake}
           onPlayAgain={resetForNextRound}
           sessionPL={sessionPL}
           guess={lastGuess}
+          inWelcomeMode={location.inWelcomeMode}
         />
       </div>
     );
@@ -283,14 +292,19 @@ function PlayingScreen({
   onSubmitGuess,
   balance,
   stake,
+  inWelcomeMode,
+  welcomeRoundsRemaining,
 }: {
   location: Location;
   timeLeft: number;
   onSubmitGuess: (guess: { lat: number; lng: number }) => void;
   balance: { cash: number; bonus: number; total: number } | null;
   stake: number;
+  inWelcomeMode?: boolean;
+  welcomeRoundsRemaining?: number;
 }) {
   const danger = timeLeft <= 10;
+  const welcomeRoundNumber = inWelcomeMode && welcomeRoundsRemaining != null ? 5 - welcomeRoundsRemaining : 0;
 
   return (
     <div className="h-screen w-full flex flex-col bg-[var(--background)] relative">
@@ -299,8 +313,17 @@ function PlayingScreen({
         <div className="flex items-center gap-2 sm:gap-3">
           <div className="w-1 h-10 sm:h-12 bg-primary" />
           <div>
-            <div className="text-[9px] sm:text-[10px] text-muted-foreground uppercase tracking-wider font-mono mb-0.5">Stake</div>
-            <div className="font-bold text-lg sm:text-2xl tabular-nums text-primary">${stake}</div>
+            {inWelcomeMode ? (
+              <>
+                <div className="text-[9px] sm:text-[10px] text-primary uppercase tracking-wider font-mono mb-0.5">Free Play</div>
+                <div className="font-bold text-lg sm:text-2xl tabular-nums">{welcomeRoundNumber + 1}/5</div>
+              </>
+            ) : (
+              <>
+                <div className="text-[9px] sm:text-[10px] text-muted-foreground uppercase tracking-wider font-mono mb-0.5">Stake</div>
+                <div className="font-bold text-lg sm:text-2xl tabular-nums text-primary">${stake}</div>
+              </>
+            )}
           </div>
         </div>
         <div className="text-center">
@@ -342,6 +365,7 @@ function ResultScreen({
   onPlayAgain,
   sessionPL,
   guess,
+  inWelcomeMode,
 }: {
   result: RoundResult;
   location: Location;
@@ -349,68 +373,85 @@ function ResultScreen({
   onPlayAgain: () => void;
   sessionPL: number;
   guess: { lat: number; lng: number };
+  inWelcomeMode?: boolean;
 }) {
   const won = result.profitLoss > 0;
+  const welcomeComplete = inWelcomeMode && result.welcomeRoundsRemaining === 0;
+  const hasBalanceToPlay = result.balance.total >= stake;
 
   return (
-    <div className="absolute inset-0 z-30 flex items-center justify-center px-3 sm:px-0" style={{ background: "rgba(5,6,8,0.78)", backdropFilter: "blur(8px)" }}>
-      {/* Result card */}
-      <div className="w-full max-w-[720px] mx-auto bg-[var(--bg-card)] border border-[var(--line-2)] rounded-[20px] overflow-hidden shadow-[0_40px_100px_-20px_rgba(0,0,0,0.8)]">
-        {/* Result map */}
-        <div className="relative w-full" style={{ aspectRatio: "2/1" }}>
-          <ResultMap
-            yourGuess={guess}
-            opponentGuess={null}
-            truth={result.actualLocation}
-          />
-        </div>
+    <>
+      <div className="absolute inset-0 z-30 flex items-center justify-center px-3 sm:px-0" style={{ background: "rgba(5,6,8,0.78)", backdropFilter: "blur(8px)" }}>
+        {/* Result card */}
+        <div className="w-full max-w-[720px] mx-auto bg-[var(--bg-card)] border border-[var(--line-2)] rounded-[20px] overflow-hidden shadow-[0_40px_100px_-20px_rgba(0,0,0,0.8)]">
+          {/* Result map */}
+          <div className="relative w-full" style={{ aspectRatio: "2/1" }}>
+            <ResultMap
+              yourGuess={guess}
+              opponentGuess={null}
+              truth={result.actualLocation}
+            />
+          </div>
 
-        {/* Result body */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sm:gap-5 px-4 sm:px-6 py-4 sm:py-5">
-          <div className="flex-1">
-            <div className="font-mono text-[9px] sm:text-[10px] tracking-widest uppercase" style={{ color: "var(--ink-3)" }}>
-              You were
+          {/* Result body */}
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sm:gap-5 px-4 sm:px-6 py-4 sm:py-5">
+            <div className="flex-1">
+              <div className="font-mono text-[9px] sm:text-[10px] tracking-widest uppercase" style={{ color: "var(--ink-3)" }}>
+                You were
+              </div>
+              <div className="mt-1 tabular-nums text-[32px] sm:text-[40px]" style={{ fontFamily: "var(--font-anton), Anton, sans-serif", fontStyle: "italic", lineHeight: "1" }}>
+                {result.distanceKm.toFixed(1)} km
+              </div>
+              <div className="mt-2 font-mono text-xs" style={{ color: "var(--ink-2)" }}>
+                {location.label} · {result.multiplier}x multiplier
+              </div>
             </div>
-            <div className="mt-1 tabular-nums text-[32px] sm:text-[40px]" style={{ fontFamily: "var(--font-anton), Anton, sans-serif", fontStyle: "italic", lineHeight: "1" }}>
-              {result.distanceKm.toFixed(1)} km
-            </div>
-            <div className="mt-2 font-mono text-xs" style={{ color: "var(--ink-2)" }}>
-              {location.label} · {result.multiplier}x multiplier
+
+            <div className="text-left sm:text-right self-start sm:self-auto">
+              <div className="font-mono text-[9px] sm:text-[10px] tracking-widest uppercase" style={{ color: "var(--ink-3)" }}>
+                {won ? "Round won" : "Round lost"}
+              </div>
+              <div
+                className="mt-1 tabular-nums"
+                style={{
+                  fontFamily: "var(--font-anton), Anton, sans-serif",
+                  fontStyle: "italic",
+                  fontSize: "36px",
+                  lineHeight: "1",
+                  color: won ? "var(--primary)" : "var(--destructive)",
+                }}
+              >
+                <span className="sm:text-[44px]">
+                  {won ? `+$${result.payout.toFixed(2)}` : `−$${stake.toFixed(2)}`}
+                </span>
+              </div>
             </div>
           </div>
 
-          <div className="text-left sm:text-right self-start sm:self-auto">
-            <div className="font-mono text-[9px] sm:text-[10px] tracking-widest uppercase" style={{ color: "var(--ink-3)" }}>
-              {won ? "Round won" : "Round lost"}
-            </div>
-            <div
-              className="mt-1 tabular-nums"
-              style={{
-                fontFamily: "var(--font-anton), Anton, sans-serif",
-                fontStyle: "italic",
-                fontSize: "36px",
-                lineHeight: "1",
-                color: won ? "var(--primary)" : "var(--destructive)",
-              }}
+          {/* CTA buttons */}
+          <div className="flex gap-2.5 px-4 sm:px-6 pb-4 sm:pb-6">
+            <button
+              onClick={onPlayAgain}
+              className="flex-1 bg-primary text-primary-foreground border-0 px-4 sm:px-5 py-3 sm:py-3.5 rounded-xl font-bold uppercase tracking-wide transition-all hover:brightness-105 cursor-pointer"
+              style={{ fontFamily: "var(--font-anton), Anton, sans-serif", fontStyle: "italic", fontSize: "14px", letterSpacing: "0.03em" }}
             >
-              <span className="sm:text-[44px]">
-                {won ? `+$${result.payout.toFixed(2)}` : `−$${stake.toFixed(2)}`}
+              <span className="sm:text-[16px]">
+                {inWelcomeMode && result.welcomeRoundsRemaining != null && result.welcomeRoundsRemaining > 0
+                  ? `Free Play ${6 - result.welcomeRoundsRemaining}/5 →`
+                  : `Play Again · $${stake} →`}
               </span>
-            </div>
+            </button>
           </div>
-        </div>
-
-        {/* CTA buttons */}
-        <div className="flex gap-2.5 px-4 sm:px-6 pb-4 sm:pb-6">
-          <button
-            onClick={onPlayAgain}
-            className="flex-1 bg-primary text-primary-foreground border-0 px-4 sm:px-5 py-3 sm:py-3.5 rounded-xl font-bold uppercase tracking-wide transition-all hover:brightness-105 cursor-pointer"
-            style={{ fontFamily: "var(--font-anton), Anton, sans-serif", fontStyle: "italic", fontSize: "14px", letterSpacing: "0.03em" }}
-          >
-            <span className="sm:text-[16px]">Play Again · ${stake} →</span>
-          </button>
         </div>
       </div>
-    </div>
+
+      {/* Welcome complete modal overlay */}
+      {welcomeComplete && (
+        <WelcomeCompleteModal
+          balance={result.balance}
+          onContinue={hasBalanceToPlay ? onPlayAgain : undefined}
+        />
+      )}
+    </>
   );
 }

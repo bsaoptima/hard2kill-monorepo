@@ -131,11 +131,11 @@
 /* Available balance banner */
 .avail {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
+  flex-direction: column;
+  gap: 16px;
   background: #111114;
   border: 1px solid #26272e;
-  padding: 16px 20px;
+  padding: 20px;
   margin: 0 0 26px;
 }
 
@@ -164,6 +164,42 @@
   text-align: right;
   max-width: 200px;
   line-height: 1.5;
+}
+
+.breakdown {
+  background: #191a1f;
+  border: 1px solid #26272e;
+  padding: 14px 16px;
+  font-family: var(--font-space-mono), monospace;
+  font-size: 12px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.breakdownRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  color: #8b8c95;
+}
+
+.breakdownRow + .breakdownRow {
+  border-top: 1px dashed #26272e;
+}
+
+.breakdownTotal {
+  color: #39ff6a;
+  font-weight: 700;
+  border-top: 1px solid #26272e !important;
+  margin-top: 4px;
+  padding-top: 10px;
+}
+
+.breakdownHelp {
+  font-size: 11px;
+  color: #6b6c75;
+  margin-top: 2px;
 }
 
 .panel {

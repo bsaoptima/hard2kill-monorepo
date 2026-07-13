@@ -21,10 +21,26 @@ export async function POST(request: Request) {
 
   const adminSupabase = createAdminClient()
 
-  // Get all locations
-  const { data: allLocations } = await adminSupabase
+  // Check if user is in welcome mode (< 5 welcome rounds played)
+  const { data: balanceData } = await adminSupabase
+    .from('balances')
+    .select('welcome_rounds_played')
+    .eq('id', user.id)
+    .single()
+
+  const welcomeRoundsPlayed = balanceData?.welcome_rounds_played ?? 0
+  const inWelcomeMode = welcomeRoundsPlayed < 5
+
+  // Get locations (filter to easy locations in welcome mode)
+  let locationsQuery = adminSupabase
     .from('geostakes_locations')
-    .select('id, lat, lng, label')
+    .select('id, lat, lng, label, difficulty')
+
+  if (inWelcomeMode) {
+    locationsQuery = locationsQuery.lte('difficulty', 2)
+  }
+
+  const { data: allLocations } = await locationsQuery
 
   if (!allLocations || allLocations.length === 0) {
     return NextResponse.json({ error: 'No locations available' }, { status: 400 })
@@ -68,5 +84,7 @@ export async function POST(request: Request) {
     lat: randomLocation.lat,
     lng: randomLocation.lng,
     label: randomLocation.label,
+    inWelcomeMode,
+    welcomeRoundsRemaining: Math.max(0, 5 - welcomeRoundsPlayed),
   })
 }

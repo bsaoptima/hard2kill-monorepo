@@ -14,12 +14,19 @@ export async function POST(request: Request) {
   const { referralCode } = await request.json();
   const adminSupabase = createAdminClient();
 
-  // Create balance record with $0
-  await adminSupabase.from("balances").upsert({
+  // Create balance record with $5 welcome bonus
+  const { error: balanceError } = await adminSupabase.from("balances").upsert({
     id: user.id,
     balance: 0,
-    bonus: 0,
+    bonus: 5,
+    welcome_rounds_played: 0,
   }, { onConflict: "id", ignoreDuplicates: true });
+
+  if (balanceError) {
+    console.error("[post-signup] Failed to create balance:", balanceError);
+  } else {
+    console.log("[post-signup] Created balance with $5 welcome bonus for user:", user.id);
+  }
 
   // Send admin notification + trigger Resend automation
   if (user.email) {

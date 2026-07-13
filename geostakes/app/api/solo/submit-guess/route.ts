@@ -12,7 +12,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { getBalance, deductBalance, creditCash } from '@/lib/balance'
+import { getBalance, deductBalance, deductBonusFirst, creditCash } from '@/lib/balance'
 import { calculateDistance, calculatePayout } from '@/lib/solo'
 
 export async function POST(request: Request) {
@@ -43,6 +43,19 @@ export async function POST(request: Request) {
 
   const adminSupabase = createAdminClient()
 
+  // Check welcome mode status
+  const { data: balanceData } = await adminSupabase
+    .from('balances')
+    .select('welcome_rounds_played')
+    .eq('id', user.id)
+    .single()
+
+  const welcomeRoundsPlayed = balanceData?.welcome_rounds_played ?? 0
+  const inWelcomeMode = welcomeRoundsPlayed < 5
+
+  // Force $1 stake in welcome mode
+  const effectiveStake = inWelcomeMode ? 1 : stake
+
   // Check if user has already played this location
   const { data: alreadyPlayed } = await adminSupabase
     .from('geostakes_solo_played_locations')
@@ -71,7 +84,7 @@ export async function POST(request: Request) {
 
   // Check user has sufficient balance
   const balance = await getBalance(user.id)
-  if (balance.total < stake) {
+  if (balance.total < effectiveStake) {
     return NextResponse.json(
       { error: 'Insufficient balance' },
       { status: 400 }
@@ -86,10 +99,13 @@ export async function POST(request: Request) {
     guessLng
   )
 
-  const { multiplier, payout } = calculatePayout(stake, distanceKm)
+  const { multiplier, payout } = calculatePayout(effectiveStake, distanceKm)
 
   // Deduct stake from balance
-  const deductResult = await deductBalance(user.id, stake)
+  // In welcome mode, deduct from bonus first so free rounds use the free credit
+  const deductResult = inWelcomeMode
+    ? await deductBonusFirst(user.id, effectiveStake)
+    : await deductBalance(user.id, effectiveStake)
   if (!deductResult.success) {
     return NextResponse.json(
       { error: 'Failed to deduct stake' },
@@ -106,7 +122,7 @@ export async function POST(request: Request) {
   await adminSupabase.from('geostakes_solo_rounds').insert({
     user_id: user.id,
     location_id: locationId,
-    stake,
+    stake: effectiveStake,
     guess_lat: guessLat,
     guess_lng: guessLng,
     distance_km: distanceKm,
@@ -120,8 +136,18 @@ export async function POST(request: Request) {
     location_id: locationId,
   })
 
+  // Increment welcome counter if in welcome mode
+  let newWelcomeRoundsPlayed = welcomeRoundsPlayed
+  if (inWelcomeMode) {
+    newWelcomeRoundsPlayed = welcomeRoundsPlayed + 1
+    await adminSupabase
+      .from('balances')
+      .update({ welcome_rounds_played: newWelcomeRoundsPlayed })
+      .eq('id', user.id)
+  }
+
   // Calculate profit/loss for this round
-  const profitLoss = payout - stake
+  const profitLoss = payout - effectiveStake
 
   // Get updated balance
   const newBalance = await getBalance(user.id)
@@ -136,5 +162,6 @@ export async function POST(request: Request) {
       lng: location.lng,
     },
     balance: newBalance,
+    welcomeRoundsRemaining: Math.max(0, 5 - newWelcomeRoundsPlayed),
   })
 }
