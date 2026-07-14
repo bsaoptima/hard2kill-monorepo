@@ -94,6 +94,105 @@ async function verifyBaseTransaction(txHash: string): Promise<{
   return null;
 }
 
+// Helper to check a single parsed instruction for SOL/USDC transfer to platform wallet
+async function checkInstructionForTransfer(
+  instruction: unknown,
+  platformWallet: string,
+  usdcMint: string
+): Promise<{
+  amount: number;
+  fromAddress: string;
+  tokenSymbol: string;
+  solAmount?: number;
+  solPrice?: number;
+} | null> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const ix = instruction as any;
+
+  if (!ix || !("parsed" in ix)) return null;
+
+  // Check for native SOL transfer (system program)
+  if (ix.program === "system" && ix.parsed?.type === "transfer") {
+    const info = ix.parsed.info;
+    const destination = info.destination;
+    const lamports = info.lamports;
+    const source = info.source;
+
+    console.log("[Solana Verify] SOL transfer found:");
+    console.log("  - destination:", destination);
+    console.log("  - platformWallet:", platformWallet);
+    console.log("  - match:", destination === platformWallet);
+    console.log("  - lamports:", lamports);
+    console.log("  - source:", source);
+
+    if (destination === platformWallet) {
+      const solAmount = lamports / LAMPORTS_PER_SOL;
+      const solPrice = await getSolPrice();
+      if (!solPrice) {
+        console.error("[Solana Verify] Could not fetch SOL price");
+        return null;
+      }
+      const usdAmount = solAmount * solPrice;
+      return {
+        amount: usdAmount,
+        fromAddress: source,
+        tokenSymbol: "SOL",
+        solAmount,
+        solPrice,
+      };
+    }
+  }
+
+  // Check for SPL token transfer
+  if (ix.program === "spl-token" && (ix.parsed?.type === "transfer" || ix.parsed?.type === "transferChecked")) {
+    const info = ix.parsed.info;
+    const destAccount = info.destination;
+
+    try {
+      const destInfo = await getSolanaConnection().getParsedAccountInfo(
+        new PublicKey(destAccount)
+      );
+
+      if (destInfo.value?.data && "parsed" in destInfo.value.data) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const destData = destInfo.value.data as any;
+        const destOwner = destData.parsed.info.owner;
+        const mint = destData.parsed.info.mint;
+
+        if (destOwner === platformWallet && mint === usdcMint) {
+          let uiAmount: number;
+          if (ix.parsed.type === "transferChecked") {
+            uiAmount = info.tokenAmount.uiAmount;
+          } else {
+            uiAmount = Number(info.amount) / 1e6;
+          }
+
+          const sourceAccount = info.source;
+          const sourceInfo = await getSolanaConnection().getParsedAccountInfo(
+            new PublicKey(sourceAccount)
+          );
+
+          let fromAddress = sourceAccount;
+          if (sourceInfo.value?.data && "parsed" in sourceInfo.value.data) {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            fromAddress = (sourceInfo.value.data as any).parsed.info.owner;
+          }
+
+          return {
+            amount: uiAmount,
+            fromAddress,
+            tokenSymbol: "USDC",
+          };
+        }
+      }
+    } catch (e) {
+      console.error("[Solana Verify] Error checking SPL transfer:", e);
+    }
+  }
+
+  return null;
+}
+
 // Verify Solana transaction (SPL tokens and native SOL)
 async function verifySolanaTransaction(signature: string): Promise<{
   amount: number; // USD amount
@@ -122,99 +221,30 @@ async function verifySolanaTransaction(signature: string): Promise<{
     const usdcMint = USDC_ADDRESS_SOLANA;
 
     console.log("[Solana Verify] Platform wallet:", platformWallet);
-    console.log("[Solana Verify] Instructions count:", tx.transaction.message.instructions.length);
+    console.log("[Solana Verify] Top-level instructions count:", tx.transaction.message.instructions.length);
 
+    // Check top-level instructions
     for (const instruction of tx.transaction.message.instructions) {
-      console.log("[Solana Verify] Checking instruction:",
-        "parsed" in instruction ? `program=${instruction.program}, type=${instruction.parsed?.type}` : "unparsed"
+      console.log("[Solana Verify] Checking top-level instruction:",
+        "parsed" in instruction ? `program=${(instruction as { program?: string }).program}, type=${(instruction as { parsed?: { type?: string } }).parsed?.type}` : "unparsed"
       );
 
-      // Check for native SOL transfer (system program)
-      if ("parsed" in instruction && instruction.program === "system") {
-        const parsed = instruction.parsed;
+      const result = await checkInstructionForTransfer(instruction, platformWallet, usdcMint);
+      if (result) return result;
+    }
 
-        if (parsed.type === "transfer") {
-          const info = parsed.info;
-          const destination = info.destination;
-          const lamports = info.lamports;
-          const source = info.source;
+    // Check inner instructions (for CPIs like wallet programs)
+    const innerInstructions = tx.meta?.innerInstructions || [];
+    console.log("[Solana Verify] Inner instruction groups:", innerInstructions.length);
 
-          console.log("[Solana Verify] SOL transfer found:");
-          console.log("  - destination:", destination);
-          console.log("  - platformWallet:", platformWallet);
-          console.log("  - match:", destination === platformWallet);
-          console.log("  - lamports:", lamports);
-          console.log("  - source:", source);
+    for (const innerGroup of innerInstructions) {
+      for (const innerIx of innerGroup.instructions) {
+        console.log("[Solana Verify] Checking inner instruction:",
+          "parsed" in innerIx ? `program=${(innerIx as { program?: string }).program}, type=${(innerIx as { parsed?: { type?: string } }).parsed?.type}` : "unparsed"
+        );
 
-          // Check if transfer is to platform wallet
-          if (destination === platformWallet) {
-            const solAmount = lamports / LAMPORTS_PER_SOL;
-
-            // Fetch SOL price to convert to USD
-            const solPrice = await getSolPrice();
-            if (!solPrice) {
-              console.error("[Solana Verify] Could not fetch SOL price");
-              return null;
-            }
-
-            const usdAmount = solAmount * solPrice;
-
-            return {
-              amount: usdAmount,
-              fromAddress: source,
-              tokenSymbol: "SOL",
-              solAmount,
-              solPrice,
-            };
-          }
-        }
-      }
-
-      // Check for SPL token transfer
-      if ("parsed" in instruction && instruction.program === "spl-token") {
-        const parsed = instruction.parsed;
-
-        if (parsed.type === "transfer" || parsed.type === "transferChecked") {
-          const info = parsed.info;
-
-          // Get the destination account owner
-          const destAccount = info.destination;
-          const destInfo = await getSolanaConnection().getParsedAccountInfo(
-            new PublicKey(destAccount)
-          );
-
-          if (destInfo.value?.data && "parsed" in destInfo.value.data) {
-            const destOwner = destInfo.value.data.parsed.info.owner;
-            const mint = destInfo.value.data.parsed.info.mint;
-
-            if (destOwner === platformWallet && mint === usdcMint) {
-              // Get amount
-              let uiAmount: number;
-              if (parsed.type === "transferChecked") {
-                uiAmount = info.tokenAmount.uiAmount;
-              } else {
-                uiAmount = Number(info.amount) / 1e6; // USDC has 6 decimals
-              }
-
-              // Get source wallet
-              const sourceAccount = info.source;
-              const sourceInfo = await getSolanaConnection().getParsedAccountInfo(
-                new PublicKey(sourceAccount)
-              );
-
-              let fromAddress = sourceAccount;
-              if (sourceInfo.value?.data && "parsed" in sourceInfo.value.data) {
-                fromAddress = sourceInfo.value.data.parsed.info.owner;
-              }
-
-              return {
-                amount: uiAmount,
-                fromAddress,
-                tokenSymbol: "USDC",
-              };
-            }
-          }
-        }
+        const result = await checkInstructionForTransfer(innerIx, platformWallet, usdcMint);
+        if (result) return result;
       }
     }
 
