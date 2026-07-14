@@ -293,7 +293,7 @@ type WithdrawalDestinationSummary = {
 };
 
 function summarizeDestination(d: {
-  type: "pix" | "crypto_usdc_base" | "bank";
+  type: "pix" | "crypto_usdc_base" | "crypto_sol" | "crypto_usdc_sol" | "bank";
   key?: string;
   address?: string;
   holderName?: string;
@@ -324,6 +324,28 @@ function summarizeDestination(d: {
       eta: "under 24 hours",
     };
   }
+  if (d.type === "crypto_sol") {
+    return {
+      label: "SOL (Solana)",
+      primary: mask(d.address ?? ""),
+      detailRows: [
+        { label: "SOLANA ADDRESS", value: d.address ?? "" },
+        { label: "NETWORK", value: "Solana Mainnet" },
+      ],
+      eta: "instant",
+    };
+  }
+  if (d.type === "crypto_usdc_sol") {
+    return {
+      label: "USDC (Solana)",
+      primary: mask(d.address ?? ""),
+      detailRows: [
+        { label: "SOLANA ADDRESS", value: d.address ?? "" },
+        { label: "NETWORK", value: "Solana Mainnet" },
+      ],
+      eta: "instant",
+    };
+  }
   // bank
   return {
     label: "Bank (IBAN)",
@@ -346,7 +368,7 @@ export async function sendWithdrawalRequestReceipt(opts: {
   to: string;
   amount: number;
   destination: {
-    type: "pix" | "crypto_usdc_base" | "bank";
+    type: "pix" | "crypto_usdc_base" | "crypto_sol" | "crypto_usdc_sol" | "bank";
     key?: string;
     address?: string;
     holderName?: string;
@@ -402,7 +424,7 @@ export async function sendWithdrawalAdminAlert(opts: {
   userEmail: string;
   amount: number;
   destination: {
-    type: "pix" | "crypto_usdc_base" | "bank";
+    type: "pix" | "crypto_usdc_base" | "crypto_sol" | "crypto_usdc_sol" | "bank";
     key?: string;
     address?: string;
     holderName?: string;
