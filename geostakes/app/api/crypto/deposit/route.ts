@@ -103,18 +103,32 @@ async function verifySolanaTransaction(signature: string): Promise<{
   solPrice?: number; // SOL price used for conversion
 } | null> {
   try {
+    console.log("[Solana Verify] Fetching transaction:", signature);
     const tx = await getSolanaConnection().getParsedTransaction(signature, {
       maxSupportedTransactionVersion: 0,
     });
 
-    if (!tx || tx.meta?.err) {
+    if (!tx) {
+      console.log("[Solana Verify] Transaction not found (null)");
+      return null;
+    }
+
+    if (tx.meta?.err) {
+      console.log("[Solana Verify] Transaction has error:", tx.meta.err);
       return null;
     }
 
     const platformWallet = PLATFORM_WALLET_ADDRESS_SOLANA;
     const usdcMint = USDC_ADDRESS_SOLANA;
 
+    console.log("[Solana Verify] Platform wallet:", platformWallet);
+    console.log("[Solana Verify] Instructions count:", tx.transaction.message.instructions.length);
+
     for (const instruction of tx.transaction.message.instructions) {
+      console.log("[Solana Verify] Checking instruction:",
+        "parsed" in instruction ? `program=${instruction.program}, type=${instruction.parsed?.type}` : "unparsed"
+      );
+
       // Check for native SOL transfer (system program)
       if ("parsed" in instruction && instruction.program === "system") {
         const parsed = instruction.parsed;
@@ -124,6 +138,13 @@ async function verifySolanaTransaction(signature: string): Promise<{
           const destination = info.destination;
           const lamports = info.lamports;
           const source = info.source;
+
+          console.log("[Solana Verify] SOL transfer found:");
+          console.log("  - destination:", destination);
+          console.log("  - platformWallet:", platformWallet);
+          console.log("  - match:", destination === platformWallet);
+          console.log("  - lamports:", lamports);
+          console.log("  - source:", source);
 
           // Check if transfer is to platform wallet
           if (destination === platformWallet) {
@@ -197,6 +218,7 @@ async function verifySolanaTransaction(signature: string): Promise<{
       }
     }
 
+    console.log("[Solana Verify] No matching transfer found after checking all instructions");
     return null;
   } catch (error) {
     console.error("[Solana Verify] Error:", error);
