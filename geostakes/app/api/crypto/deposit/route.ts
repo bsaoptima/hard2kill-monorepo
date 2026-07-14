@@ -36,10 +36,12 @@ const publicClient = createPublicClient({
   transport: http(),
 });
 
-// Solana connection
-const solanaConnection = new Connection(
-  process.env.SOLANA_RPC_URL || clusterApiUrl("mainnet-beta")
-);
+// Solana connection - created lazily to ensure env var is read at runtime
+function getSolanaConnection() {
+  const rpcUrl = process.env.SOLANA_RPC_URL || clusterApiUrl("mainnet-beta");
+  console.log("[Solana] Using RPC:", rpcUrl.substring(0, 50) + "...");
+  return new Connection(rpcUrl);
+}
 
 // ERC-20 Transfer event signature
 const transferEventAbi = parseAbiItem(
@@ -101,7 +103,7 @@ async function verifySolanaTransaction(signature: string): Promise<{
   solPrice?: number; // SOL price used for conversion
 } | null> {
   try {
-    const tx = await solanaConnection.getParsedTransaction(signature, {
+    const tx = await getSolanaConnection().getParsedTransaction(signature, {
       maxSupportedTransactionVersion: 0,
     });
 
@@ -156,7 +158,7 @@ async function verifySolanaTransaction(signature: string): Promise<{
 
           // Get the destination account owner
           const destAccount = info.destination;
-          const destInfo = await solanaConnection.getParsedAccountInfo(
+          const destInfo = await getSolanaConnection().getParsedAccountInfo(
             new PublicKey(destAccount)
           );
 
@@ -175,7 +177,7 @@ async function verifySolanaTransaction(signature: string): Promise<{
 
               // Get source wallet
               const sourceAccount = info.source;
-              const sourceInfo = await solanaConnection.getParsedAccountInfo(
+              const sourceInfo = await getSolanaConnection().getParsedAccountInfo(
                 new PublicKey(sourceAccount)
               );
 

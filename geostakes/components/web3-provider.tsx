@@ -17,6 +17,7 @@ createAppKit({
     socials: [],
   },
   themeMode: "dark",
+  allWallets: "SHOW", // Show all wallets including WalletConnect QR
 });
 
 export function Web3Provider({
