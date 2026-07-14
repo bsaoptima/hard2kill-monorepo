@@ -6,6 +6,7 @@ import { toast } from 'sonner'
 import styles from './arcade-withdraw.module.css'
 
 const QUICK_AMOUNTS = [25, 50, 100]
+const DAILY_CRYPTO_LIMIT = 100
 
 type RecentPayout = {
   name: string
@@ -20,9 +21,10 @@ export function ArcadeWithdraw({ cash, bonus }: { cash: number; bonus: number })
   const router = useRouter()
   const [amount, setAmount] = useState<number>(0)
   const [customInput, setCustomInput] = useState<string>("")
-  const [method, setMethod] = useState<'bank' | 'crypto'>('bank')
+  const [method, setMethod] = useState<'bank' | 'crypto'>('crypto')
   const [submitting, setSubmitting] = useState(false)
   const [submitted, setSubmitted] = useState(false)
+  const [txHash, setTxHash] = useState<string | null>(null)
   const [recentPayouts, setRecentPayouts] = useState<RecentPayout[]>([])
 
   // Bank fields
@@ -30,6 +32,9 @@ export function ArcadeWithdraw({ cash, bonus }: { cash: number; bonus: number })
   const [iban, setIban] = useState("")
   const [bankName, setBankName] = useState("")
   const [swift, setSwift] = useState("")
+
+  // Crypto fields
+  const [walletAddress, setWalletAddress] = useState("")
 
   useEffect(() => {
     // Fetch recent payouts for the ticker
@@ -67,11 +72,16 @@ export function ArcadeWithdraw({ cash, bonus }: { cash: number; bonus: number })
         cleanIban.length <= 34
       )
     }
-    // Crypto - for now always valid (will show coming soon)
-    return true
+    // Solana address: base58, 32-44 chars
+    const addr = walletAddress.trim()
+    return /^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(addr)
   }
 
-  const canSubmit = isValid && isDestinationValid() && !submitting
+  function isCryptoAmountValid(): boolean {
+    return method !== 'crypto' || amount <= DAILY_CRYPTO_LIMIT
+  }
+
+  const canSubmit = isValid && isDestinationValid() && isCryptoAmountValid() && !submitting
 
   async function submit() {
     if (!canSubmit) return
@@ -108,41 +118,106 @@ export function ArcadeWithdraw({ cash, bonus }: { cash: number; bonus: number })
         setSubmitting(false)
       }
     } else {
-      // Crypto withdrawal - for now show coming soon
-      toast.error("Crypto withdrawals coming soon")
-      setSubmitting(false)
+      // Crypto withdrawal - instant on-chain (SOL only)
+      try {
+        const res = await fetch("/api/crypto/withdraw", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({
+            amount,
+            type: 'crypto_sol',
+            address: walletAddress.trim(),
+          }),
+          cache: "no-store",
+        })
+        const body = await res.json().catch(() => ({}))
+        if (!res.ok) {
+          toast.error(body?.error ?? "Withdrawal failed")
+          setSubmitting(false)
+          return
+        }
+        toast.success("Withdrawal sent!")
+        setTxHash(body.txHash)
+        setSubmitted(true)
+        router.refresh()
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : "Network error")
+        setSubmitting(false)
+      }
     }
   }
 
   const ctaLabel = submitting
-    ? method === 'bank' ? "Submitting request…" : "Connecting wallet…"
+    ? method === 'bank' ? "Submitting request…" : "Sending on-chain…"
     : amount <= 0
     ? "Enter an amount"
     : isOver
     ? "Amount exceeds balance"
+    : method === 'crypto' && amount > DAILY_CRYPTO_LIMIT
+    ? `Daily limit is $${DAILY_CRYPTO_LIMIT}`
     : !isDestinationValid()
-    ? "Complete bank details"
-    : method === 'bank'
-    ? `Withdraw $${amount.toFixed(2)} →`
-    : "Connect wallet"
+    ? method === 'bank' ? "Complete bank details" : "Enter wallet address"
+    : `Withdraw $${amount.toFixed(2)} →`
 
   const ctaSubText = method === 'bank'
     ? "Withdrawals are reviewed and processed manually. Typical turnaround: 1-3 business days for international bank transfers."
-    : "Connect via WalletConnect so we know where to send your SOL."
+    : `Instant on-chain withdrawal. Daily limit: $${DAILY_CRYPTO_LIMIT}.`
 
   if (submitted) {
+    const isCrypto = txHash !== null
+    const explorerUrl = isCrypto ? `https://solscan.io/tx/${txHash}` : null
+
     return (
       <div className={styles.withdraw}>
         <div className={styles.panel} style={{ textAlign: 'center', padding: '60px 28px' }}>
           <div className={styles.h1} style={{ color: '#39ff6a', fontSize: '48px', marginBottom: '16px' }}>
-            On its way
+            {isCrypto ? 'Sent!' : 'On its way'}
           </div>
-          <p style={{ fontSize: '14px', color: '#8b8c95', lineHeight: '1.8', marginBottom: '8px' }}>
-            Your withdrawal request is being processed.
-          </p>
-          <p style={{ fontSize: '14px', color: '#8b8c95', lineHeight: '1.8' }}>
-            You'll get an email when the funds are sent — typically within 1-3 business days.
-          </p>
+          {isCrypto ? (
+            <>
+              <p style={{ fontSize: '14px', color: '#8b8c95', lineHeight: '1.8', marginBottom: '16px' }}>
+                Your withdrawal has been sent on-chain.
+              </p>
+              {explorerUrl && (
+                <a
+                  href={explorerUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{
+                    display: 'inline-block',
+                    fontFamily: 'var(--font-space-mono), monospace',
+                    fontSize: '12px',
+                    color: '#39ff6a',
+                    background: 'rgba(57, 255, 106, 0.1)',
+                    padding: '12px 20px',
+                    textDecoration: 'none',
+                    marginBottom: '8px',
+                  }}
+                >
+                  View on Explorer →
+                </a>
+              )}
+              <p style={{
+                fontFamily: 'var(--font-space-mono), monospace',
+                fontSize: '10px',
+                color: '#6b6c75',
+                lineHeight: '1.6',
+                marginTop: '16px',
+                wordBreak: 'break-all',
+              }}>
+                {txHash}
+              </p>
+            </>
+          ) : (
+            <>
+              <p style={{ fontSize: '14px', color: '#8b8c95', lineHeight: '1.8', marginBottom: '8px' }}>
+                Your withdrawal request is being processed.
+              </p>
+              <p style={{ fontSize: '14px', color: '#8b8c95', lineHeight: '1.8' }}>
+                You'll get an email when the funds are sent — typically within 1-3 business days.
+              </p>
+            </>
+          )}
         </div>
       </div>
     )
@@ -291,8 +366,11 @@ export function ArcadeWithdraw({ cash, bonus }: { cash: number; bonus: number })
             </svg>
           </span>
           <div className={styles.optBody}>
-            <div className={styles.optTitle}>Crypto · SOL</div>
-            <div className={styles.optSub}>Instant · send to your wallet</div>
+            <div className={styles.optTitle}>
+              Crypto
+              <span className={styles.pop}>INSTANT</span>
+            </div>
+            <div className={styles.optSub}>SOL or USDC · sent to your wallet</div>
           </div>
         </div>
 
@@ -341,17 +419,27 @@ export function ArcadeWithdraw({ cash, bonus }: { cash: number; bonus: number })
               </div>
             </>
           ) : (
-            <div className={styles.dest}>
+            <>
+              <div className={styles.dest}>
+                <label>Solana wallet address</label>
+                <input
+                  className={styles.inp}
+                  placeholder="Your Solana address"
+                  value={walletAddress}
+                  onChange={(e) => setWalletAddress(e.target.value)}
+                  style={{ fontFamily: 'var(--font-space-mono), monospace', fontSize: '12px' }}
+                />
+              </div>
               <p style={{
                 fontFamily: 'var(--font-space-mono), monospace',
-                fontSize: '11px',
-                color: '#8b8c95',
-                margin: 0,
-                lineHeight: '1.7'
+                fontSize: '10px',
+                color: '#6b6c75',
+                margin: '12px 0 0',
+                lineHeight: '1.6'
               }}>
-                Crypto withdrawals coming soon. Currently only bank transfers are supported.
+                Daily limit: ${DAILY_CRYPTO_LIMIT}. Withdrawals are sent instantly on-chain.
               </p>
-            </div>
+            </>
           )}
         </div>
       </div>

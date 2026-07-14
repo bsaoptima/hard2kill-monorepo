@@ -8,8 +8,44 @@ import {
 
 export const MIN_WITHDRAWAL = 5;
 export const MAX_WITHDRAWAL = 5000;
+export const DAILY_CRYPTO_WITHDRAWAL_LIMIT = 100;
 
-export type DestinationType = "pix" | "crypto_usdc_base" | "bank";
+/**
+ * Get the total amount withdrawn by a user in the last 24 hours (crypto only)
+ */
+export async function getDailyWithdrawalTotal(userId: string): Promise<number> {
+  const supabase = createAdminClient();
+  const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+
+  const { data } = await supabase
+    .from("withdrawals")
+    .select("amount")
+    .eq("user_id", userId)
+    .in("destination_type", ["crypto_usdc_base", "crypto_sol", "crypto_usdc_sol"])
+    .gte("created_at", oneDayAgo);
+
+  return data?.reduce((sum, row) => sum + Number(row.amount), 0) ?? 0;
+}
+
+/**
+ * Check if user can withdraw the requested amount (daily limit)
+ */
+export async function checkDailyLimit(userId: string, amount: number): Promise<{
+  allowed: boolean;
+  dailyTotal: number;
+  remaining: number;
+}> {
+  const dailyTotal = await getDailyWithdrawalTotal(userId);
+  const remaining = Math.max(0, DAILY_CRYPTO_WITHDRAWAL_LIMIT - dailyTotal);
+
+  return {
+    allowed: dailyTotal + amount <= DAILY_CRYPTO_WITHDRAWAL_LIMIT,
+    dailyTotal,
+    remaining,
+  };
+}
+
+export type DestinationType = "pix" | "crypto_usdc_base" | "crypto_sol" | "crypto_usdc_sol" | "bank";
 
 export type PixDestination = {
   type: "pix";
@@ -19,6 +55,16 @@ export type PixDestination = {
 export type CryptoBaseDestination = {
   type: "crypto_usdc_base";
   address: string; // 0x... 42-char Ethereum-compatible address
+};
+
+export type CryptoSolDestination = {
+  type: "crypto_sol";
+  address: string; // Solana base58 address
+};
+
+export type CryptoUsdcSolDestination = {
+  type: "crypto_usdc_sol";
+  address: string; // Solana base58 address
 };
 
 export type BankDestination = {
@@ -33,7 +79,12 @@ export type BankDestination = {
 export type Destination =
   | PixDestination
   | CryptoBaseDestination
+  | CryptoSolDestination
+  | CryptoUsdcSolDestination
   | BankDestination;
+
+// Solana address validation (base58, 32-44 chars)
+const SOLANA_ADDRESS_RE = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/;
 
 const EVM_ADDRESS_RE = /^0x[a-fA-F0-9]{40}$/;
 const IBAN_LOOSE_RE = /^[A-Z]{2}[A-Z0-9]{13,32}$/; // light shape check
@@ -52,6 +103,12 @@ function validateDestination(d: Destination): string | null {
     const addr = d.address?.trim() ?? "";
     if (!EVM_ADDRESS_RE.test(addr))
       return "USDC Base address must be a valid 0x… Ethereum-format wallet address (42 chars)";
+    return null;
+  }
+  if (d.type === "crypto_sol" || d.type === "crypto_usdc_sol") {
+    const addr = d.address?.trim() ?? "";
+    if (!SOLANA_ADDRESS_RE.test(addr))
+      return "Solana address must be a valid base58 wallet address";
     return null;
   }
   if (d.type === "bank") {
@@ -82,7 +139,7 @@ function packDestination(d: Destination): {
   if (d.type === "pix") {
     return { value: d.key.trim(), details: null };
   }
-  if (d.type === "crypto_usdc_base") {
+  if (d.type === "crypto_usdc_base" || d.type === "crypto_sol" || d.type === "crypto_usdc_sol") {
     return { value: d.address.trim(), details: null };
   }
   // bank
