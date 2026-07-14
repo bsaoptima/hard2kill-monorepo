@@ -46,7 +46,8 @@ export async function GET() {
 
     // Format rounds for display
     const formattedRounds = rounds.map((round) => {
-      const locationData = round.geostakes_locations as { label: string | null } | null;
+      // Supabase returns the joined data - handle both array and object cases
+      const locationData = round.geostakes_locations as unknown as { label: string | null } | null;
       return {
         id: round.id,
         locationId: round.location_id,
