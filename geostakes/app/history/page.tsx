@@ -8,6 +8,7 @@ import styles from "./history.module.css"
 type RoundData = {
   id: string
   locationId: string
+  locationLabel: string | null
   stake: number
   distanceKm: number
   multiplier: number
@@ -172,7 +173,7 @@ export default function HistoryPage() {
         ) : (
           <div className={styles.tbl}>
             <div className={styles.hr}>
-              <div className={styles.hc}>Location ID</div>
+              <div className={styles.hc}>Location</div>
               <div className={`${styles.hc} ${styles.hStake}`}>Stake</div>
               <div className={`${styles.hc} ${styles.hDist}`}>Distance</div>
               <div className={styles.hc}>Multiplier</div>
@@ -182,7 +183,7 @@ export default function HistoryPage() {
             {filteredRounds.map((round) => (
               <div key={round.id} className={styles.rr}>
                 <div className={styles.loc}>
-                  <div className={styles.locn}>{round.locationId.slice(0, 8)}...</div>
+                  <div className={styles.locn}>{round.locationLabel ?? "Unknown location"}</div>
                   <div className={styles.locc}>{formatTimeAgo(round.createdAt)} ago</div>
                 </div>
                 <div className={`${styles.cell} ${styles.cStake}`}>${round.stake.toFixed(2)}</div>

@@ -15,10 +15,10 @@ export async function GET() {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Fetch user's solo rounds
+    // Fetch user's solo rounds with location labels
     const { data: rounds, error } = await supabase
       .from("geostakes_solo_rounds")
-      .select("id, location_id, stake, distance_km, multiplier, payout, created_at")
+      .select("id, location_id, stake, distance_km, multiplier, payout, created_at, geostakes_locations(label)")
       .eq("user_id", user.id)
       .order("created_at", { ascending: false });
 
@@ -45,16 +45,20 @@ export async function GET() {
     };
 
     // Format rounds for display
-    const formattedRounds = rounds.map((round) => ({
-      id: round.id,
-      locationId: round.location_id,
-      stake: Number(round.stake),
-      distanceKm: Math.round(Number(round.distance_km)),
-      multiplier: Number(round.multiplier),
-      payout: Number(round.payout),
-      createdAt: round.created_at,
-      isWin: Number(round.payout) > Number(round.stake),
-    }));
+    const formattedRounds = rounds.map((round) => {
+      const locationData = round.geostakes_locations as { label: string | null } | null;
+      return {
+        id: round.id,
+        locationId: round.location_id,
+        locationLabel: locationData?.label ?? null,
+        stake: Number(round.stake),
+        distanceKm: Math.round(Number(round.distance_km)),
+        multiplier: Number(round.multiplier),
+        payout: Number(round.payout),
+        createdAt: round.created_at,
+        isWin: Number(round.payout) > Number(round.stake),
+      };
+    });
 
     return NextResponse.json({ rounds: formattedRounds, stats });
   } catch (err: any) {
