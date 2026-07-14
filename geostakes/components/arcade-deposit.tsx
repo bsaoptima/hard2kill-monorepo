@@ -7,7 +7,7 @@ import { Connection, PublicKey, Transaction, SystemProgram, LAMPORTS_PER_SOL, cl
 import { getAssociatedTokenAddress, createTransferInstruction, TOKEN_PROGRAM_ID } from "@solana/spl-token"
 import type { Provider } from "@reown/appkit-utils/solana"
 import { SUPPORTED_TOKENS_SOLANA } from "@/lib/contracts/usdc"
-import { BASE_CHAIN_ID, SOLANA_CHAIN_ID, PLATFORM_WALLET_ADDRESS_SOLANA } from "@/lib/wagmi"
+import { SOLANA_CHAIN_ID, PLATFORM_WALLET_ADDRESS_SOLANA } from "@/lib/wagmi"
 import styles from './arcade-deposit.module.css'
 
 const QUICK_AMOUNTS = [5, 10, 25, 50]

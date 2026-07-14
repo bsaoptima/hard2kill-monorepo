@@ -3,24 +3,14 @@
 import { useState, useEffect, useMemo } from "react";
 import { toast } from "sonner";
 import { useAppKit, useAppKitAccount, useAppKitNetwork, useAppKitProvider, useDisconnect } from "@reown/appkit/react";
-import { useReadContract, useWriteContract, useWaitForTransactionReceipt } from "wagmi";
-import { useAppKitConnection } from "@reown/appkit-adapter-solana/react";
 import type { Provider } from "@reown/appkit-utils/solana";
 import { Wallet, ExternalLink, AlertCircle, CheckCircle2 } from "lucide-react";
 import {
-  SUPPORTED_TOKENS_BASE,
   SUPPORTED_TOKENS_SOLANA,
-  erc20Abi,
-  parseStablecoin,
-  formatStablecoin,
-  getTokensForChain,
   type TokenConfig,
-  type ChainType,
 } from "@/lib/contracts/usdc";
 import {
-  PLATFORM_WALLET_ADDRESS,
   PLATFORM_WALLET_ADDRESS_SOLANA,
-  BASE_CHAIN_ID,
   SOLANA_CHAIN_ID,
 } from "@/lib/wagmi";
 import { DepositMatchBanner } from "./deposit-match-banner";
@@ -40,25 +30,24 @@ import {
 } from "@solana/spl-token";
 
 const QUICK_AMOUNTS = [5, 10, 20, 50, 100, 250];
-const QUICK_AMOUNTS_SOL = [0.1, 0.25, 0.5, 1, 2, 5]; // SOL amounts
+const QUICK_AMOUNTS_SOL = [0.1, 0.25, 0.5, 1, 2, 5];
 const MIN_DEPOSIT = 1;
 const MAX_DEPOSIT = 5000;
 const MAX_BONUS = 10;
 
 function calculateBonus(depositAmount: number): number {
   if (depositAmount <= 0) return 0;
-  const bonus = depositAmount * 1.0; // 100% match
+  const bonus = depositAmount * 1.0;
   return Math.min(bonus, MAX_BONUS);
 }
 
-// Solana connection
 const solanaConnection = new Connection(
   process.env.NEXT_PUBLIC_SOLANA_RPC_URL || clusterApiUrl("mainnet-beta")
 );
 
 export function CryptoDepositForm() {
   const [amount, setAmount] = useState<string>("");
-  const [selectedTokenKey, setSelectedTokenKey] = useState<string>("USDC");
+  const [selectedTokenKey, setSelectedTokenKey] = useState<string>("SOL");
   const [bonusEligible, setBonusEligible] = useState<boolean | null>(null);
   const [crediting, setCrediting] = useState(false);
   const [solanaBalance, setSolanaBalance] = useState<number | null>(null);
@@ -72,34 +61,18 @@ export function CryptoDepositForm() {
   const { chainId, caipNetworkId } = useAppKitNetwork();
   const { disconnect } = useDisconnect();
 
-  // Solana provider
   const { walletProvider: solanaWalletProvider } = useAppKitProvider<Provider>("solana");
 
-  // Determine if connected wallet is Solana or EVM
   const isSolana = useMemo(() => {
-    // Check if caipNetworkId contains solana
     if (caipNetworkId?.includes("solana")) return true;
-    // Or check if chainId matches Solana mainnet
     if (chainId === SOLANA_CHAIN_ID) return true;
-    // Or if address looks like a Solana address (base58, 32-44 chars, no 0x prefix)
     if (address && !address.startsWith("0x") && address.length >= 32 && address.length <= 44) return true;
     return false;
   }, [chainId, caipNetworkId, address]);
 
-  const chainType: ChainType = isSolana ? "solana" : "evm";
-  const supportedTokens = getTokensForChain(chainType);
+  const supportedTokens = SUPPORTED_TOKENS_SOLANA;
   const token: TokenConfig = supportedTokens[selectedTokenKey] || Object.values(supportedTokens)[0];
 
-  // EVM: Read user's token balance
-  const { data: evmTokenBalance, refetch: refetchEvmBalance } = useReadContract({
-    address: token.address as `0x${string}`,
-    abi: erc20Abi,
-    functionName: "balanceOf",
-    args: address ? [address as `0x${string}`] : undefined,
-    query: { enabled: !!address && !isSolana },
-  });
-
-  // Fetch SOL price
   useEffect(() => {
     async function fetchSolPrice() {
       try {
@@ -111,12 +84,10 @@ export function CryptoDepositForm() {
       }
     }
     fetchSolPrice();
-    // Refresh price every 30 seconds
     const interval = setInterval(fetchSolPrice, 30000);
     return () => clearInterval(interval);
   }, []);
 
-  // Solana: Fetch token/SOL balance for selected token
   useEffect(() => {
     if (!isSolana || !address) {
       setSolanaBalance(null);
@@ -128,18 +99,15 @@ export function CryptoDepositForm() {
         const walletPubkey = new PublicKey(address!);
 
         if (token.isNative) {
-          // Fetch native SOL balance
           const balance = await solanaConnection.getBalance(walletPubkey);
           setSolanaBalance(balance / LAMPORTS_PER_SOL);
         } else {
-          // Fetch SPL token balance
           const mintPubkey = new PublicKey(token.address);
           const ata = await getAssociatedTokenAddress(mintPubkey, walletPubkey);
           const balance = await solanaConnection.getTokenAccountBalance(ata);
           setSolanaBalance(Number(balance.value.uiAmount));
         }
       } catch {
-        // Token account might not exist
         setSolanaBalance(0);
       }
     }
@@ -147,9 +115,8 @@ export function CryptoDepositForm() {
     fetchSolanaBalance();
   }, [isSolana, address, token.address, token.isNative]);
 
-  // Fetch ALL token balances for the connected wallet
   useEffect(() => {
-    if (!address || !isConnected) {
+    if (!address || !isConnected || !isSolana) {
       setAllBalances({});
       return;
     }
@@ -157,31 +124,22 @@ export function CryptoDepositForm() {
     async function fetchAllBalances() {
       const balances: Record<string, number> = {};
 
-      if (isSolana) {
-        // Fetch all Solana balances
+      try {
+        const walletPubkey = new PublicKey(address!);
+
+        const solBalance = await solanaConnection.getBalance(walletPubkey);
+        balances["SOL"] = solBalance / LAMPORTS_PER_SOL;
+
         try {
-          const walletPubkey = new PublicKey(address!);
-
-          // SOL balance
-          const solBalance = await solanaConnection.getBalance(walletPubkey);
-          balances["SOL"] = solBalance / LAMPORTS_PER_SOL;
-
-          // USDC balance
-          try {
-            const usdcMint = new PublicKey(SUPPORTED_TOKENS_SOLANA.USDC.address);
-            const usdcAta = await getAssociatedTokenAddress(usdcMint, walletPubkey);
-            const usdcBalance = await solanaConnection.getTokenAccountBalance(usdcAta);
-            balances["USDC"] = Number(usdcBalance.value.uiAmount) || 0;
-          } catch {
-            balances["USDC"] = 0;
-          }
-        } catch (error) {
-          console.error("Failed to fetch Solana balances:", error);
+          const usdcMint = new PublicKey(SUPPORTED_TOKENS_SOLANA.USDC.address);
+          const usdcAta = await getAssociatedTokenAddress(usdcMint, walletPubkey);
+          const usdcBalance = await solanaConnection.getTokenAccountBalance(usdcAta);
+          balances["USDC"] = Number(usdcBalance.value.uiAmount) || 0;
+        } catch {
+          balances["USDC"] = 0;
         }
-      } else {
-        // Fetch all Base (EVM) balances
-        // For EVM, we only support USDC currently, and the balance is fetched via useReadContract
-        // We'll get it from evmTokenBalance when available
+      } catch (error) {
+        console.error("Failed to fetch Solana balances:", error);
       }
 
       setAllBalances(balances);
@@ -190,38 +148,13 @@ export function CryptoDepositForm() {
     fetchAllBalances();
   }, [address, isConnected, isSolana]);
 
-  // EVM: Write contract for transfer
-  const {
-    data: evmTxHash,
-    error: writeError,
-    isPending: isWriting,
-    writeContract,
-    reset: resetWrite,
-  } = useWriteContract();
-
-  // EVM: Wait for transaction confirmation
-  const {
-    isLoading: isConfirming,
-    isSuccess: isConfirmed,
-    error: confirmError,
-  } = useWaitForTransactionReceipt({ hash: evmTxHash });
-
-  // Check bonus eligibility on mount
   useEffect(() => {
     checkBonusEligibility();
   }, []);
 
-  // Handle EVM transaction confirmation - credit balance
-  useEffect(() => {
-    if (isConfirmed && evmTxHash && !crediting) {
-      creditBalance(evmTxHash, "base");
-    }
-  }, [isConfirmed, evmTxHash]);
-
-  // Handle Solana transaction confirmation
   useEffect(() => {
     if (solanaTxStatus === "confirmed" && solanaTxHash && !crediting) {
-      creditBalance(solanaTxHash, "solana");
+      creditBalance(solanaTxHash);
     }
   }, [solanaTxStatus, solanaTxHash]);
 
@@ -237,7 +170,7 @@ export function CryptoDepositForm() {
     }
   }
 
-  async function creditBalance(hash: string, chain: "base" | "solana") {
+  async function creditBalance(hash: string) {
     setCrediting(true);
     try {
       const res = await fetch("/api/crypto/deposit", {
@@ -247,7 +180,7 @@ export function CryptoDepositForm() {
           txHash: hash,
           expectedAmount: numericAmount,
           token: selectedTokenKey,
-          chain,
+          chain: "solana",
         }),
       });
 
@@ -260,25 +193,20 @@ export function CryptoDepositForm() {
 
       toast.success(`$${data.credited.toFixed(2)} added to your balance!`);
       setAmount("");
-      if (isSolana) {
-        setSolanaTxHash(null);
-        setSolanaTxStatus("idle");
-        // Refetch Solana balance
-        if (address) {
-          const walletPubkey = new PublicKey(address);
-          if (token.isNative) {
-            const balance = await solanaConnection.getBalance(walletPubkey);
-            setSolanaBalance(balance / LAMPORTS_PER_SOL);
-          } else {
-            const mintPubkey = new PublicKey(token.address);
-            const ata = await getAssociatedTokenAddress(mintPubkey, walletPubkey);
-            const balance = await solanaConnection.getTokenAccountBalance(ata);
-            setSolanaBalance(Number(balance.value.uiAmount));
-          }
+      setSolanaTxHash(null);
+      setSolanaTxStatus("idle");
+
+      if (address) {
+        const walletPubkey = new PublicKey(address);
+        if (token.isNative) {
+          const balance = await solanaConnection.getBalance(walletPubkey);
+          setSolanaBalance(balance / LAMPORTS_PER_SOL);
+        } else {
+          const mintPubkey = new PublicKey(token.address);
+          const ata = await getAssociatedTokenAddress(mintPubkey, walletPubkey);
+          const balance = await solanaConnection.getTokenAccountBalance(ata);
+          setSolanaBalance(Number(balance.value.uiAmount));
         }
-      } else {
-        resetWrite();
-        refetchEvmBalance();
       }
     } catch (error) {
       toast.error("Failed to credit balance. Please contact support.");
@@ -289,11 +217,8 @@ export function CryptoDepositForm() {
   }
 
   const numericAmount = Number(amount);
-  const walletBalance = isSolana
-    ? (solanaBalance ?? 0)
-    : (evmTokenBalance ? formatStablecoin(evmTokenBalance, token.decimals) : 0);
+  const walletBalance = solanaBalance ?? 0;
 
-  // For SOL, calculate USD value
   const isNativeToken = token.isNative;
   const usdValue = isNativeToken && solPrice ? numericAmount * solPrice : numericAmount;
   const minAmountInToken = isNativeToken && solPrice ? MIN_DEPOSIT / solPrice : MIN_DEPOSIT;
@@ -306,18 +231,16 @@ export function CryptoDepositForm() {
     usdValue <= MAX_DEPOSIT &&
     numericAmount <= walletBalance;
 
-  const isWrongNetwork = isConnected && !isSolana && chainId !== BASE_CHAIN_ID;
-  const isBusy = isWriting || isConfirming || crediting || solanaTxStatus === "signing" || solanaTxStatus === "confirming";
+  const isWrongNetwork = isConnected && !isSolana;
+  const isBusy = crediting || solanaTxStatus === "signing" || solanaTxStatus === "confirming";
   const canSubmit = isValid && isConnected && !isBusy && !isWrongNetwork && (!isNativeToken || solPrice !== null);
 
   const bonusAmount = bonusEligible ? calculateBonus(usdValue) : 0;
   const totalAmount = usdValue + bonusAmount;
 
-  // Get active transaction hash for display
-  const activeTxHash = isSolana ? solanaTxHash : evmTxHash;
-  const activeIsConfirming = isSolana ? solanaTxStatus === "confirming" : isConfirming;
-  const activeIsConfirmed = isSolana ? solanaTxStatus === "confirmed" : isConfirmed;
-  const activeError = isSolana ? (solanaTxStatus === "error" ? new Error("Transaction failed") : null) : (writeError || confirmError);
+  const activeIsConfirming = solanaTxStatus === "confirming";
+  const activeIsConfirmed = solanaTxStatus === "confirmed";
+  const activeError = solanaTxStatus === "error" ? new Error("Transaction failed") : null;
 
   async function handleSolanaDeposit() {
     if (!solanaWalletProvider || !address) return;
@@ -330,7 +253,6 @@ export function CryptoDepositForm() {
       let tx: Transaction;
 
       if (token.isNative) {
-        // Native SOL transfer
         const lamports = Math.round(numericAmount * LAMPORTS_PER_SOL);
         const transferIx = SystemProgram.transfer({
           fromPubkey: senderPubkey,
@@ -339,7 +261,6 @@ export function CryptoDepositForm() {
         });
         tx = new Transaction().add(transferIx);
       } else {
-        // SPL token transfer
         const mintPubkey = new PublicKey(token.address);
         const senderAta = await getAssociatedTokenAddress(mintPubkey, senderPubkey);
         const recipientAta = await getAssociatedTokenAddress(mintPubkey, recipientPubkey);
@@ -359,14 +280,12 @@ export function CryptoDepositForm() {
       const { blockhash } = await solanaConnection.getLatestBlockhash();
       tx.recentBlockhash = blockhash;
 
-      // Sign and send
       const signedTx = await solanaWalletProvider.signTransaction(tx);
       const signature = await solanaConnection.sendRawTransaction(signedTx.serialize());
 
       setSolanaTxHash(signature);
       setSolanaTxStatus("confirming");
 
-      // Wait for confirmation
       const confirmation = await solanaConnection.confirmTransaction(signature, "confirmed");
       if (confirmation.value.err) {
         setSolanaTxStatus("error");
@@ -383,20 +302,9 @@ export function CryptoDepositForm() {
 
   function handleDeposit() {
     if (!canSubmit || !address) return;
-
-    if (isSolana) {
-      handleSolanaDeposit();
-    } else {
-      writeContract({
-        address: token.address as `0x${string}`,
-        abi: erc20Abi,
-        functionName: "transfer",
-        args: [PLATFORM_WALLET_ADDRESS as `0x${string}`, parseStablecoin(numericAmount, token.decimals)],
-      });
-    }
+    handleSolanaDeposit();
   }
 
-  // Show connect wallet state
   if (!isConnected) {
     return (
       <div className="space-y-4">
@@ -407,7 +315,7 @@ export function CryptoDepositForm() {
             <Wallet className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
             <h3 className="text-lg font-semibold mb-2">Connect Your Wallet</h3>
             <p className="text-sm text-muted-foreground mb-6">
-              Connect your wallet to deposit crypto directly.
+              Connect your Solana wallet to deposit SOL or USDC.
             </p>
             <button
               onClick={() => open()}
@@ -418,7 +326,7 @@ export function CryptoDepositForm() {
           </div>
 
           <div className="text-[11px] text-muted-foreground font-mono leading-relaxed pt-4 border-t border-border">
-            Deposit USDC on Base, or SOL/USDC on Solana. Funds appear in your balance
+            Deposit SOL or USDC on Solana. Funds appear in your balance
             within seconds of blockchain confirmation.
           </div>
         </div>
@@ -426,7 +334,6 @@ export function CryptoDepositForm() {
     );
   }
 
-  // Wrong network warning (EVM only)
   if (isWrongNetwork) {
     return (
       <div className="space-y-4">
@@ -435,13 +342,13 @@ export function CryptoDepositForm() {
             <AlertCircle className="w-12 h-12 mx-auto text-yellow-500 mb-4" />
             <h3 className="text-lg font-semibold mb-2">Wrong Network</h3>
             <p className="text-sm text-muted-foreground mb-6">
-              Please switch to Base or Solana to deposit.
+              Please connect a Solana wallet to deposit.
             </p>
             <button
-              onClick={() => open({ view: "Networks" })}
+              onClick={() => disconnect()}
               className="bg-primary text-primary-foreground px-6 py-3 rounded-xl text-base font-bold uppercase tracking-[0.04em] hover:brightness-105 hover:-translate-y-px transition-all"
             >
-              Switch Network
+              Disconnect & Try Again
             </button>
           </div>
         </div>
@@ -454,7 +361,6 @@ export function CryptoDepositForm() {
       {bonusEligible && <DepositMatchBanner />}
 
       <div className="bg-card border border-border rounded-xl p-6 space-y-5">
-        {/* Connected Wallet Info */}
         <div className="p-3 bg-background rounded-lg border border-border space-y-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -463,7 +369,7 @@ export function CryptoDepositForm() {
               </div>
               <div>
                 <div className="text-xs text-muted-foreground">
-                  Connected on {isSolana ? "Solana" : "Base"}
+                  Connected on Solana
                 </div>
                 <div className="font-mono text-sm">
                   {address?.slice(0, 6)}...{address?.slice(-4)}
@@ -478,46 +384,33 @@ export function CryptoDepositForm() {
             </button>
           </div>
 
-          {/* Wallet Balances */}
           <div className="pt-2 border-t border-border">
             <div className="text-xs text-muted-foreground mb-2">Wallet Balances</div>
             <div className="flex flex-wrap gap-3">
-              {isSolana ? (
-                <>
-                  <div className="flex items-center gap-2 bg-card px-3 py-1.5 rounded-lg border border-border">
-                    <span className="text-sm font-medium">SOL</span>
-                    <span className="font-bold tabular-nums">
-                      {(allBalances["SOL"] ?? 0).toFixed(4)}
-                    </span>
-                    {solPrice && (
-                      <span className="text-xs text-muted-foreground">
-                        (~${((allBalances["SOL"] ?? 0) * solPrice).toFixed(2)})
-                      </span>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-2 bg-card px-3 py-1.5 rounded-lg border border-border">
-                    <span className="text-sm font-medium">USDC</span>
-                    <span className="font-bold tabular-nums">
-                      ${(allBalances["USDC"] ?? 0).toFixed(2)}
-                    </span>
-                  </div>
-                </>
-              ) : (
-                <div className="flex items-center gap-2 bg-card px-3 py-1.5 rounded-lg border border-border">
-                  <span className="text-sm font-medium">USDC</span>
-                  <span className="font-bold tabular-nums">
-                    ${walletBalance.toFixed(2)}
+              <div className="flex items-center gap-2 bg-card px-3 py-1.5 rounded-lg border border-border">
+                <span className="text-sm font-medium">SOL</span>
+                <span className="font-bold tabular-nums">
+                  {(allBalances["SOL"] ?? 0).toFixed(4)}
+                </span>
+                {solPrice && (
+                  <span className="text-xs text-muted-foreground">
+                    (~${((allBalances["SOL"] ?? 0) * solPrice).toFixed(2)})
                   </span>
-                </div>
-              )}
+                )}
+              </div>
+              <div className="flex items-center gap-2 bg-card px-3 py-1.5 rounded-lg border border-border">
+                <span className="text-sm font-medium">USDC</span>
+                <span className="font-bold tabular-nums">
+                  ${(allBalances["USDC"] ?? 0).toFixed(2)}
+                </span>
+              </div>
             </div>
           </div>
         </div>
 
-        {/* Token Selector */}
         <div>
           <label className="block text-[10px] uppercase tracking-[0.12em] text-muted-foreground font-mono mb-2">
-            Token ({isSolana ? "Solana" : "Base"})
+            Token (Solana)
           </label>
           <div className="flex gap-2">
             {Object.keys(supportedTokens).map((tokenKey) => (
@@ -538,7 +431,6 @@ export function CryptoDepositForm() {
           </div>
         </div>
 
-        {/* Amount Input */}
         <div>
           <label className="block text-[10px] uppercase tracking-[0.12em] text-muted-foreground font-mono mb-2">
             Amount ({token.symbol})
@@ -589,7 +481,6 @@ export function CryptoDepositForm() {
           )}
         </div>
 
-        {/* Quick Amounts */}
         <div>
           <label className="block text-[10px] uppercase tracking-[0.12em] text-muted-foreground font-mono mb-2">
             Quick amounts
@@ -613,7 +504,6 @@ export function CryptoDepositForm() {
           </div>
         </div>
 
-        {/* Bonus Calculator */}
         {bonusEligible && numericAmount > 0 && usdValue >= MIN_DEPOSIT && (
           <div className="rounded-lg bg-green-500/5 border border-green-500/20 p-4 space-y-2">
             <div className="flex items-center gap-2 text-xs font-medium text-green-500 mb-3">
@@ -645,8 +535,7 @@ export function CryptoDepositForm() {
           </div>
         )}
 
-        {/* Transaction Status */}
-        {activeTxHash && (
+        {solanaTxHash && (
           <div className={`rounded-lg p-4 ${activeIsConfirmed ? "bg-green-500/10 border border-green-500/20" : "bg-blue-500/10 border border-blue-500/20"}`}>
             <div className="flex items-center gap-2 mb-2">
               {activeIsConfirming ? (
@@ -664,18 +553,17 @@ export function CryptoDepositForm() {
               ) : null}
             </div>
             <a
-              href={isSolana ? `https://solscan.io/tx/${activeTxHash}` : `https://basescan.org/tx/${activeTxHash}`}
+              href={`https://solscan.io/tx/${solanaTxHash}`}
               target="_blank"
               rel="noopener noreferrer"
               className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1 font-mono"
             >
-              {activeTxHash.slice(0, 10)}...{activeTxHash.slice(-8)}
+              {solanaTxHash.slice(0, 10)}...{solanaTxHash.slice(-8)}
               <ExternalLink className="w-3 h-3" />
             </a>
           </div>
         )}
 
-        {/* Error Display */}
         {activeError && (
           <div className="rounded-lg bg-red-500/10 border border-red-500/20 p-4">
             <div className="flex items-center gap-2 text-red-500 text-sm">
@@ -685,14 +573,13 @@ export function CryptoDepositForm() {
           </div>
         )}
 
-        {/* Submit Button */}
         <button
           type="button"
           onClick={handleDeposit}
           disabled={!canSubmit}
           className="w-full bg-primary text-primary-foreground py-3.5 rounded-xl text-base font-bold uppercase tracking-[0.04em] disabled:opacity-40 disabled:cursor-not-allowed hover:brightness-105 hover:-translate-y-px transition-all"
         >
-          {isWriting || solanaTxStatus === "signing"
+          {solanaTxStatus === "signing"
             ? "Confirm in wallet..."
             : activeIsConfirming
             ? "Confirming..."
@@ -706,7 +593,7 @@ export function CryptoDepositForm() {
         </button>
 
         <div className="text-[11px] text-muted-foreground font-mono leading-relaxed pt-2 border-t border-border">
-          Direct transfer on {isSolana ? "Solana" : "Base"}. Funds appear in your balance within
+          Direct transfer on Solana. Funds appear in your balance within
           seconds of blockchain confirmation. No fees beyond gas.
         </div>
       </div>
