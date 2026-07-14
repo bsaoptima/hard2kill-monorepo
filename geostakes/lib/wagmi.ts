@@ -31,8 +31,8 @@ export const solanaAdapter = new SolanaAdapter({
 export const metadata = {
   name: "Geostakes",
   description: "Skill-based GeoGuessr wagering",
-  url: "https://geostakes.gg",
-  icons: ["https://geostakes.gg/icon.png"],
+  url: "https://www.geostakes.com",
+  icons: ["https://www.geostakes.com/icon.png"],
 };
 
 // Platform wallet addresses for receiving deposits
