@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
+import { useBalance } from "@/lib/balance-context"
 import styles from './arcade-withdraw.module.css'
 
 const QUICK_AMOUNTS = [25, 50, 100]
@@ -19,6 +20,7 @@ export function ArcadeWithdraw({ cash, bonus }: { cash: number; bonus: number })
   const balance = cash; // Only cash can be withdrawn
   const total = cash + bonus;
   const router = useRouter()
+  const { refreshBalance } = useBalance()
   const [amount, setAmount] = useState<number>(0)
   const [customInput, setCustomInput] = useState<string>("")
   const [method, setMethod] = useState<'bank' | 'crypto'>('crypto')
@@ -112,6 +114,7 @@ export function ArcadeWithdraw({ cash, bonus }: { cash: number; bonus: number })
         }
         toast.success("Withdrawal request submitted")
         setSubmitted(true)
+        refreshBalance()
         router.refresh()
       } catch (err) {
         toast.error(err instanceof Error ? err.message : "Network error")
@@ -139,6 +142,7 @@ export function ArcadeWithdraw({ cash, bonus }: { cash: number; bonus: number })
         toast.success("Withdrawal sent!")
         setTxHash(body.txHash)
         setSubmitted(true)
+        refreshBalance()
         router.refresh()
       } catch (err) {
         toast.error(err instanceof Error ? err.message : "Network error")

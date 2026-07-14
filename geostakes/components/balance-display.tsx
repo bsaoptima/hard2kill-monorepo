@@ -1,32 +1,10 @@
 "use client"
 
-import { useEffect, useState } from 'react'
+import { useBalance } from '@/lib/balance-context'
 import { WalletBox } from './wallet-box'
 
-interface Balance {
-  cash: number
-  bonus: number
-  total: number
-}
-
 export function BalanceDisplay() {
-  const [balance, setBalance] = useState<Balance | null>(null)
-
-  useEffect(() => {
-    fetchBalance()
-  }, [])
-
-  async function fetchBalance() {
-    try {
-      const res = await fetch('/api/balance')
-      if (res.ok) {
-        const data = await res.json()
-        setBalance(data)
-      }
-    } catch (error) {
-      console.error('Failed to fetch balance:', error)
-    }
-  }
+  const { balance } = useBalance()
 
   if (!balance) {
     return <WalletBox label="Balance" amount="$0.00" />

@@ -28,6 +28,7 @@ import {
   createTransferInstruction,
   TOKEN_PROGRAM_ID,
 } from "@solana/spl-token";
+import { useBalance } from "@/lib/balance-context";
 
 const QUICK_AMOUNTS = [5, 10, 20, 50, 100, 250];
 const QUICK_AMOUNTS_SOL = [0.1, 0.25, 0.5, 1, 2, 5];
@@ -62,6 +63,7 @@ export function CryptoDepositForm() {
   const { disconnect } = useDisconnect();
 
   const { walletProvider: solanaWalletProvider } = useAppKitProvider<Provider>("solana");
+  const { refreshBalance } = useBalance();
 
   const isSolana = useMemo(() => {
     if (caipNetworkId?.includes("solana")) return true;
@@ -195,6 +197,9 @@ export function CryptoDepositForm() {
       setAmount("");
       setSolanaTxHash(null);
       setSolanaTxStatus("idle");
+
+      // Refresh navbar balance
+      refreshBalance();
 
       if (address) {
         const walletPubkey = new PublicKey(address);

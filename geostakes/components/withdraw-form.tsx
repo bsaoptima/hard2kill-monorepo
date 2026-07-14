@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
+import { useBalance } from "@/lib/balance-context";
 
 type DestinationType = "pix" | "crypto_usdc_base" | "bank";
 
@@ -18,6 +19,7 @@ const TABS: { value: DestinationType; label: string; sublabel: string }[] = [
 
 export function WithdrawForm({ balance }: { balance: number }) {
   const router = useRouter();
+  const { refreshBalance } = useBalance();
   const [amount, setAmount] = useState<string>("");
   const [destinationType, setDestinationType] =
     useState<DestinationType>("bank");
@@ -94,6 +96,7 @@ export function WithdrawForm({ balance }: { balance: number }) {
       }
       toast.success("Withdrawal request submitted");
       setSubmitted(true);
+      refreshBalance();
 
       // Track withdrawal in Umami
       if (typeof window !== "undefined" && window.umami) {

@@ -8,6 +8,7 @@ import { Header } from "@/components/header";
 import { ArcadeMarqueeBanner } from "@/components/arcade-marquee-banner";
 import { Toaster } from "@/components/ui/sonner";
 import { Web3Provider } from "@/components/web3-provider";
+import { BalanceProvider } from "@/lib/balance-context";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -73,10 +74,12 @@ export default async function RootLayout({
     >
       <body className="min-h-full flex flex-col bg-background text-foreground">
         <Web3Provider cookies={cookies}>
-          <ConditionalLayout header={<Header />} banner={<ArcadeMarqueeBanner />}>
-            <main className="flex-1 flex flex-col">{children}</main>
-          </ConditionalLayout>
-          <Toaster />
+          <BalanceProvider>
+            <ConditionalLayout header={<Header />} banner={<ArcadeMarqueeBanner />}>
+              <main className="flex-1 flex flex-col">{children}</main>
+            </ConditionalLayout>
+            <Toaster />
+          </BalanceProvider>
         </Web3Provider>
         <Script
           src="https://cloud.umami.is/script.js"

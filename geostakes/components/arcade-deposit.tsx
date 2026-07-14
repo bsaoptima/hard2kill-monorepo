@@ -8,6 +8,7 @@ import { getAssociatedTokenAddress, createTransferInstruction, TOKEN_PROGRAM_ID 
 import type { Provider } from "@reown/appkit-utils/solana"
 import { SUPPORTED_TOKENS_SOLANA } from "@/lib/contracts/usdc"
 import { SOLANA_CHAIN_ID, PLATFORM_WALLET_ADDRESS_SOLANA } from "@/lib/wagmi"
+import { useBalance } from "@/lib/balance-context"
 import styles from './arcade-deposit.module.css'
 
 const QUICK_AMOUNTS = [5, 10, 25, 50]
@@ -41,6 +42,7 @@ export function ArcadeDeposit() {
   const { address, isConnected } = useAppKitAccount()
   const { chainId, caipNetworkId } = useAppKitNetwork()
   const { walletProvider: solanaWalletProvider } = useAppKitProvider<Provider>("solana")
+  const { refreshBalance } = useBalance()
 
   // Determine if connected wallet is Solana
   const isSolana = useMemo(() => {
@@ -149,7 +151,10 @@ export function ArcadeDeposit() {
       setSolanaTxHash(null)
       setSolanaTxStatus("idle")
 
-      // Refetch balances
+      // Refresh navbar balance
+      refreshBalance()
+
+      // Refetch wallet balances
       if (address) {
         const walletPubkey = new PublicKey(address)
         const solBalance = await solanaConnection.getBalance(walletPubkey)
