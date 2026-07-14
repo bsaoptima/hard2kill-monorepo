@@ -37,11 +37,15 @@ const publicClient = createPublicClient({
 });
 
 // Solana connection - created lazily to ensure env var is read at runtime
+// Using "confirmed" commitment for faster verification (vs "finalized")
 function getSolanaConnection() {
   const rpcUrl = process.env.SOLANA_RPC_URL || clusterApiUrl("mainnet-beta");
   console.log("[Solana] Using RPC:", rpcUrl.substring(0, 50) + "...");
-  return new Connection(rpcUrl);
+  return new Connection(rpcUrl, "confirmed");
 }
+
+// Helper to sleep for retry logic
+const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 // ERC-20 Transfer event signature
 const transferEventAbi = parseAbiItem(
@@ -194,6 +198,7 @@ async function checkInstructionForTransfer(
 }
 
 // Verify Solana transaction (SPL tokens and native SOL)
+// Includes retry logic since transaction may not be immediately available on RPC
 async function verifySolanaTransaction(signature: string): Promise<{
   amount: number; // USD amount
   fromAddress: string;
@@ -203,12 +208,28 @@ async function verifySolanaTransaction(signature: string): Promise<{
 } | null> {
   try {
     console.log("[Solana Verify] Fetching transaction:", signature);
-    const tx = await getSolanaConnection().getParsedTransaction(signature, {
-      maxSupportedTransactionVersion: 0,
-    });
+
+    // Retry up to 5 times with increasing delays (1s, 2s, 3s, 4s, 5s = 15s total max)
+    let tx = null;
+    const maxRetries = 5;
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      tx = await getSolanaConnection().getParsedTransaction(signature, {
+        maxSupportedTransactionVersion: 0,
+      });
+
+      if (tx) {
+        console.log(`[Solana Verify] Transaction found on attempt ${attempt}`);
+        break;
+      }
+
+      if (attempt < maxRetries) {
+        console.log(`[Solana Verify] Transaction not found, retry ${attempt}/${maxRetries} in ${attempt}s...`);
+        await sleep(attempt * 1000);
+      }
+    }
 
     if (!tx) {
-      console.log("[Solana Verify] Transaction not found (null)");
+      console.log("[Solana Verify] Transaction not found after all retries");
       return null;
     }
 
