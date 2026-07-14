@@ -10,8 +10,8 @@ import { SUPPORTED_TOKENS_SOLANA } from "@/lib/contracts/usdc"
 import { BASE_CHAIN_ID, SOLANA_CHAIN_ID, PLATFORM_WALLET_ADDRESS_SOLANA } from "@/lib/wagmi"
 import styles from './arcade-deposit.module.css'
 
-const QUICK_AMOUNTS = [10, 25, 50, 100]
-const MIN_DEPOSIT = 10
+const QUICK_AMOUNTS = [5, 10, 25, 50]
+const MIN_DEPOSIT = 1
 const MAX_DEPOSIT = 5000
 
 // Solana connection
@@ -25,7 +25,7 @@ function calculateBonus(depositAmount: number): number {
 }
 
 export function ArcadeDeposit() {
-  const [amount, setAmount] = useState<number>(10)
+  const [amount, setAmount] = useState<number>(5)
   const [customInput, setCustomInput] = useState<string>("")
   const [method, setMethod] = useState<'card' | 'crypto'>('card')
   const [submitting, setSubmitting] = useState(false)
@@ -144,7 +144,7 @@ export function ArcadeDeposit() {
       }
 
       toast.success(`$${data.credited.toFixed(2)} added to your balance!`)
-      setAmount(10)
+      setAmount(5)
       setCustomInput("")
       setSolanaTxHash(null)
       setSolanaTxStatus("idle")
@@ -254,9 +254,7 @@ export function ArcadeDeposit() {
     }
   }
 
-  const bonusMessage = amount < MIN_DEPOSIT
-    ? `Deposit at least $${MIN_DEPOSIT} to claim your match.`
-    : `We match your first deposit 100%.`
+  const bonusMessage = `We match your first deposit 100%.`
 
   const ctaLabel = method === 'crypto'
     ? solanaTxStatus === "signing"
@@ -267,15 +265,15 @@ export function ArcadeDeposit() {
       ? "Crediting balance..."
       : !isConnected
       ? "Connect wallet"
-      : amount < MIN_DEPOSIT
-      ? `Enter at least $${MIN_DEPOSIT}`
+      : !isValid
+      ? "Enter an amount"
       : solPrice
       ? `Deposit $${amount.toFixed(2)} (${(amount / solPrice).toFixed(3)} SOL) →`
       : `Deposit $${amount.toFixed(2)} →`
     : submitting
     ? "Opening Stripe Checkout…"
-    : amount < MIN_DEPOSIT
-    ? `Enter at least $${MIN_DEPOSIT}`
+    : !isValid
+    ? "Enter an amount"
     : `Pay $${amount.toFixed(2)} with Stripe →`
 
   const ctaSubText = method === 'card'
